@@ -40,9 +40,12 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.beans.PropertyChangeEvent;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -62,12 +65,16 @@ import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
 import javax.swing.tree.TreePath;
 
+import org.eclipse.jgit.lib.BatchingProgressMonitor;
+import org.eclipse.jgit.lib.NullProgressMonitor;
+import org.eclipse.jgit.lib.ThreadSafeProgressMonitor;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXParseException;
 
 import com.centerkey.utils.BareBonesBrowserLaunch;
 import com.romraider.Settings;
+import com.romraider.definition.DefinitionRepoManager;
 import com.romraider.logger.ecu.EcuLogger;
 import com.romraider.logger.ecu.ui.handler.table.TableUpdateHandler;
 import com.romraider.maps.Rom;
@@ -75,6 +82,7 @@ import com.romraider.maps.Table;
 import com.romraider.net.URL;
 import com.romraider.swing.AbstractFrame;
 import com.romraider.swing.CustomToolbarLayout;
+import com.romraider.swing.DefinitionManager;
 import com.romraider.swing.ECUEditorMenuBar;
 import com.romraider.swing.ECUEditorToolBar;
 import com.romraider.swing.JProgressPane;
@@ -113,6 +121,7 @@ public class ECUEditor extends AbstractFrame {
     private SetUserLevelWorker setUserLevelWorker;
     private LaunchLoggerWorker launchLoggerWorker;
     private final ImageIcon editorIcon = new ImageIcon(getClass().getResource("/graphics/romraider-ico.gif"), "RomRaider ECU Editor");
+    private DefinitionRepoManager definitionRepoManager;
 
     public ECUEditor() {
 
@@ -173,28 +182,84 @@ public class ECUEditor extends AbstractFrame {
         addWindowListener(this);
         setTitle(titleText);
         setVisible(true);
-
-        if (settings.getEcuDefinitionFiles().size() <= 0) {
-            // no ECU definitions configured - let user choose to get latest or configure later
-            Object[] options = {"Yes", "No"};
-            int answer = showOptionDialog(null,
-                    "ECU definitions not configured.\nGo online to download the latest definition files?",
+        
+        //Initialize, check, download, update Git Definition Repository
+    	definitionRepoManager = new DefinitionRepoManager(this);
+    	setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        
+        statusPanel.update("Checking Definition Repo Status...",10);
+        
+        try{
+        	if(!getDefinitionRepoManager().InitAndCheckRepoExists())
+	        {
+	        	statusPanel.update("Downloading Definition Repo...",50);
+	        	getDefinitionRepoManager().DownloadRepo();
+	        }
+	        else
+	        {
+	        	statusPanel.update("Updating Definition Repo...",75);
+	        	getDefinitionRepoManager().UpdateDefRepo();
+	        }
+        	showMessageDialog(this,
+                    "Definition repository successfully configured! ECU definition file(s) must be selected before ROM images can be opened.\nMenu: ECU Definitions > ECU Definition Manager...",
                     "Editor Configuration",
-                    DEFAULT_OPTION,
-                    WARNING_MESSAGE,
-                    null,
-                    options,
-                    options[0]);
-            if (answer == 0) {
-                BareBonesBrowserLaunch.openURL(ECU_DEFS_URL);
-            } else {
-                showMessageDialog(this,
+                    INFORMATION_MESSAGE);
+        	
+	        statusPanel.update("Ready...",0);
+	        setCursor(null);
+	       
+        }catch(Exception e){
+        	showMessageDialog(this,
+                    "Error configuring definition repository, configure definitions manually!\nError: " + e.getMessage(),
+                    "Definition repository configuration failed.",
+                    INFORMATION_MESSAGE);
+        	if (settings.getEcuDefinitionFiles().size() <= 0) {
+                // no ECU definitions configured - let user choose to get latest or configure later
+                Object[] options = {"Yes", "No"};
+                int answer = showOptionDialog(null,
+                        "Unable to configure ECU definition repository.\nGo online to download the latest definition files?",
+                        "Editor Configuration",
+                        DEFAULT_OPTION,
+                        WARNING_MESSAGE,
+                        null,
+                        options,
+                        options[0]);
+                if (answer == 0) {
+                    BareBonesBrowserLaunch.openURL(ECU_DEFS_URL);
+                } else {
+                    showMessageDialog(this,
+                            "ECU definition files need to be configured before ROM images can be opened.\nMenu: ECU Definitions > ECU Definition Manager...",
+                            "Editor Configuration",
+                            INFORMATION_MESSAGE);
+                }
+    	        
+            }
+        }
+        
+        DefinitionManager definitionManager = new DefinitionManager(this);
+        definitionManager.run(true,tDMWL);
+    }
+
+    private WindowListener tDMWL = new WindowAdapter() {
+    	@Override public void windowClosed(WindowEvent evt){
+    		CheckEcuDefList();
+    	};
+    };
+    
+    private void CheckEcuDefList() {
+    	if (settings.getEcuDefinitionFiles().size() <= 0) {
+            showMessageDialog(this,
                         "ECU definition files need to be configured before ROM images can be opened.\nMenu: ECU Definitions > ECU Definition Manager...",
                         "Editor Configuration",
                         INFORMATION_MESSAGE);
-            }
         }
-
+    	else
+    	{
+    		showMessageDialog(this,
+                    "ECU Definition Ninja",
+                    "Achievement Unlocked",
+                    INFORMATION_MESSAGE);
+    	}
     }
 
     private void showReleaseNotes() {
@@ -482,6 +547,9 @@ public class ECUEditor extends AbstractFrame {
         return this.rightPanel;
     }
 
+	public DefinitionRepoManager getDefinitionRepoManager() {
+		return definitionRepoManager;
+	}
     public ImageIcon getEditorImageIcon() {
         return this.editorIcon;
     }
