@@ -150,6 +150,20 @@ public class Settings implements Serializable {
 
     private int editorIconScale = DEFAULT_EDITOR_ICON_SCALE;
     private int tableIconScale = DEFAULT_TABLE_ICON_SCALE;
+    
+    public static final String HOME = System.getProperty("user.home");
+    public static String gitDefsUrl = "https://github.com/Merp/SubaruDefs.git";
+	public static String gitDefsBaseDir = HOME + "/.RomRaider/Definitions/Base";
+	public static String gitDefsBranch = "RomRaiderV2Definitions";
+	public static String[] gitDefsBranches = {"Stable","Beta","Alpha","RomRaiderV2Definitions"};
+    public static final String definitionMapDir = HOME + "\\Dev\\RomRaider\\";
+    public static final String RRECUDEFREPO = HOME + "/.RomRaider/Definitions/Base/RomRaider/ecu/";
+    public static final String RRV2DIR = HOME + "/.RomRaider/Definitions/Base/RomRaiderV2/";
+    public static final String DEFDIR = HOME + "/.RomRaider/Definitions";
+    public static File ecuDefinitionDir = new File(HOME + "/.RomRaider/Definitions/rrecu");
+    public static File ecuFlashDefinitionDir = new File(RRV2DIR);
+    public long definitionDirDate = 0;
+    public static File definitionDir = new File(HOME + "/.RomRaider/Definitions");
 
     public Settings() {
         //center window by default
