@@ -22,15 +22,17 @@ package com.romraider.swing;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.Vector;
 
 import javax.swing.JFileChooser;
 import javax.swing.ListSelectionModel;
 
+import com.romraider.Settings;
 import com.romraider.editor.ecu.ECUEditor;
 
-public class DefinitionManager extends javax.swing.JFrame implements ActionListener {
+public class DefinitionManager extends javax.swing.JFrame implements ActionListener, Runnable {
 
     private static final long serialVersionUID = -3920843496218196737L;
     public static int MOVE_UP = 0;
@@ -56,8 +58,21 @@ public class DefinitionManager extends javax.swing.JFrame implements ActionListe
         btnMoveDown.addActionListener(this);
         btnApply.addActionListener(this);
         btnUndo.addActionListener(this);
-
     }
+    
+    @Override
+    public void run() {
+    	this.setLocationRelativeTo(parent);
+        this.setVisible(true);
+        this.initSettings();
+        
+	}
+    
+    public void run(boolean b, WindowListener tDMWL) {
+    	this.run();
+    	this.addFile();
+    	this.addWindowListener(tDMWL);
+	}
 
     private void initSettings() {
         // add definitions to list
@@ -209,7 +224,7 @@ public class DefinitionManager extends javax.swing.JFrame implements ActionListe
     }
 
     public void addFile() {
-        JFileChooser fc = new JFileChooser("./");
+        JFileChooser fc = new JFileChooser(Settings.RRECUDEFREPO);
         fc.setFileFilter(new XMLFilter());
 
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -261,5 +276,4 @@ public class DefinitionManager extends javax.swing.JFrame implements ActionListe
     private javax.swing.JList definitionList;
     private javax.swing.JScrollPane jScrollPane1;
     // End of variables declaration//GEN-END:variables
-
 }
