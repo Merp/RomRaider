@@ -22,6 +22,7 @@ package com.romraider.logger.ecu.ui.tab.dyno;
 import static com.centerkey.utils.BareBonesBrowserLaunch.openURL;
 import static com.romraider.Version.CARS_DEFS_URL;
 
+import com.romraider.ECUExec;
 import com.romraider.Settings;
 import com.romraider.editor.ecu.ECUEditor;
 import com.romraider.logger.ecu.definition.EcuDataConvertor;
@@ -86,7 +87,7 @@ import java.util.List;
 public final class DynoControlPanel extends JPanel {
     private static final long serialVersionUID = 3787020251963102201L;
     private static final Logger LOGGER = Logger.getLogger(DynoControlPanel.class);
-    private static final String CARS_FILE = "cars_def.xml";
+    private static final String CARS_FILE = ECUExec.settings.getCarsDefFilePath();
     private static final String MISSING_CAR_DEF = "Missing cars_def.xml";
     private static final String ENGINE_SPEED = "P8";
     private static final String VEHICLE_SPEED = "P9";

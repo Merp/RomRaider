@@ -20,6 +20,7 @@
 package com.romraider.logger.ecu;
 
 import static com.centerkey.utils.BareBonesBrowserLaunch.openURL;
+import static com.romraider.Version.ECU_DEFS_URL;
 import static com.romraider.Version.LOGGER_DEFS_URL;
 import static com.romraider.Version.PRODUCT_NAME;
 import static com.romraider.Version.VERSION;
@@ -61,6 +62,7 @@ import static javax.swing.SwingUtilities.invokeLater;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GraphicsDevice;
@@ -107,7 +109,10 @@ import javax.swing.table.TableColumn;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.centerkey.utils.BareBonesBrowserLaunch;
+import com.romraider.ECUExec;
 import com.romraider.Settings;
+import com.romraider.definition.DefinitionRepoManager;
 import com.romraider.editor.ecu.ECUEditor;
 import com.romraider.io.serial.port.SerialPortRefresher;
 import com.romraider.logger.ecu.comms.controller.LoggerController;
@@ -218,7 +223,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     private static String loadResult  = "";
     private String defVersion;
     private ECUEditor ecuEditor;
-    private Settings settings;
+    private Settings settings = ECUExec.settings;
     private LoggerController controller;
     private ResetManager resetManager;
     private JLabel messageLabel;
@@ -271,7 +276,10 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     private final JLabel startText = new JLabel(" Initializing Logger...");
     private final String HOME = System.getProperty("user.home");
     private StatusIndicator statusIndicator;
-
+    private JProgressBar progressBar = startbar();
+    private DefinitionRepoManager definitionRepoManager;
+    
+    //TODO handle settings.
     public EcuLogger(Settings settings) {
         super(ECU_LOGGER_TITLE);
         construct(settings);
@@ -306,7 +314,6 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
                 "_" + System.getProperty("user.country"));
 
         if (ecuEditor == null) {
-            JProgressBar progressBar = startbar();
             bootstrap();
             progressBar.setValue(20);
             startText.setText(" Loading ECU Defs...");
@@ -349,6 +356,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     }
 
     private void bootstrap() {
+    	//TODO call the repomanager from here? or do it in ecuexec?
         EcuInitCallback ecuInitCallback = new EcuInitCallback() {
             @Override
             public void callback(EcuInit newEcuInit) {
@@ -386,6 +394,8 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
                 }
             }
         };
+        definitionRepoManager = new DefinitionRepoManager();
+        //.Run();
         fileUpdateHandler = new FileUpdateHandlerImpl(settings, this);
         dataTableModel = new LiveDataTableModel();
         liveDataUpdateHandler = new LiveDataUpdateHandler(dataTableModel);

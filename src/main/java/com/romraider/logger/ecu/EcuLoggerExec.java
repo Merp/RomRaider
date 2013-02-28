@@ -19,6 +19,7 @@
 
 package com.romraider.logger.ecu;
 
+import com.romraider.ECUExec;
 import com.romraider.Settings;
 import com.romraider.swing.LookAndFeelManager;
 import com.romraider.util.LogManager;
@@ -43,8 +44,9 @@ public final class EcuLoggerExec {
         LookAndFeelManager.initLookAndFeel();
 
         // load settings
-        SettingsManager manager = new SettingsManagerImpl();
-        Settings settings = manager.load();
+        //SettingsManager manager = new SettingsManagerImpl();
+        //Settings settings = manager.load();
+        Settings settings = ECUExec.settings;
 
         // start logger
         EcuLogger.startLogger(EXIT_ON_CLOSE, settings, args);

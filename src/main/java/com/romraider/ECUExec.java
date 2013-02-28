@@ -23,6 +23,8 @@ import static com.romraider.Version.BUILDNUMBER;
 import static com.romraider.Version.PRODUCT_NAME;
 import static com.romraider.Version.VERSION;
 import static com.romraider.Version.SUPPORT_URL;
+
+import com.romraider.definition.DefinitionRepoManager;
 import com.romraider.editor.ecu.ECUEditor;
 import static com.romraider.editor.ecu.ECUEditorManager.getECUEditor;
 import static com.romraider.logger.ecu.EcuLogger.startLogger;
@@ -31,6 +33,8 @@ import static com.romraider.util.LogManager.initDebugLogging;
 import static com.romraider.util.RomServer.isRunning;
 import static com.romraider.util.RomServer.sendRomToOpenInstance;
 import static com.romraider.util.RomServer.waitForRom;
+
+import com.romraider.swing.DefinitionManager;
 import com.romraider.util.JREChecker;
 import com.romraider.util.SettingsManager;
 import com.romraider.util.SettingsManagerImpl;
@@ -41,13 +45,24 @@ import static javax.swing.SwingUtilities.invokeLater;
 import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
 import org.apache.log4j.Logger;
 import static org.apache.log4j.Logger.getLogger;
+
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.text.DateFormat;
+
+import javax.swing.JFrame;
 
 public class ECUExec {
     private static final Logger LOGGER = getLogger(ECUExec.class);
     private static final String START_LOGGER_ARG = "-logger";
     private static final String START_LOGGER_FULLSCREEN_ARG = "-logger.fullscreen";
+    public static Settings settings;
+    private static SettingsManager settingsManager;
+	public static DefinitionRepoManager definitionRepoManager;
+	private static DefinitionManager definitionManager;
+	protected static Object lock;
 
     private ECUExec() {
         throw new UnsupportedOperationException();
@@ -91,6 +106,7 @@ public class ECUExec {
             }
         } else {
             // open editor or logger
+        	Initialize();
             if (containsLoggerArg(args)) {
                 openLogger(args);
             } else {
@@ -111,10 +127,36 @@ public class ECUExec {
         }
         return false;
     }
+    
+    private static void Initialize(){
+    	settingsManager = new SettingsManagerImpl();
+        settings = settingsManager.load();
+        definitionRepoManager = new DefinitionRepoManager();
+        definitionRepoManager.Load();
+        settings.CheckDefs();
+        if(!settings.isEcuDefExists())
+    	{
+        	definitionManager = new DefinitionManager();
+        	definitionManager.runModal(true);
+    	}
+        if(!settings.isCarsDefExists())
+        {
+        	showMessageDialog(definitionRepoManager,
+                    "Error configuring dyno definition, configure manually! ",
+                    "Dyno definition configuration failed.",
+                    INFORMATION_MESSAGE);
+        }
+        if(!settings.isLoggerDefExists())
+        {
+        	showMessageDialog(definitionRepoManager,
+                    "Error configuring logger definition, configure definitions manually! ",
+                    "Logger definition configuration failed.",
+                    INFORMATION_MESSAGE);
+        }
+    }
 
     private static void openLogger(String[] args) {
-        SettingsManager manager = new SettingsManagerImpl();
-        Settings settings = manager.load();
+        
         startLogger(EXIT_ON_CLOSE, settings, args);
     }
 
