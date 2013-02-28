@@ -91,8 +91,7 @@ public class Settings implements Serializable {
 
     private String recentVersion = "x";
 
-    private Vector<File> ecuDefinitionFiles = new Vector<File>();
-    private File lastImageDir = new File("images");
+   private File lastImageDir = new File("images");
     private File lastRepositoryDir = new File("repositories");
     private boolean obsoleteWarning = true;
     private boolean calcConflictWarning = true;
@@ -112,14 +111,37 @@ public class Settings implements Serializable {
     private Color axisColor = new Color(255, 255, 255);
     private Color warningColor = new Color(255, 0, 0);
     private int tableClickCount = 1; // number of clicks to open table
+    
+    public static final String HOME = System.getProperty("user.home");
+    private String gitDefsUrl = "http://github.com/RomRaider/SubaruDefs.git";
+	public static String gitDefsBaseDir = HOME + "/.RomRaider/Definitions/Base";
+	private Vector<String> gitAvailableBranches = new Vector<String>();
+	
+	
+	public String gitDefsBranch = "Alpha";
+    public static final String RRECUDEFREPO = HOME + "/.RomRaider/Definitions/Base/RomRaider/ecu/";
+    public static final String RR_LOGGER_REPO = HOME + "/.RomRaider/Definitions/Base/RomRaider/logger/";
+    public static final String RR_CARS_REPO = HOME + "/.RomRaider/Definitions/Base/RomRaider/dyno/";
+    static final String DEFDIR = HOME + "/.RomRaider/Definitions";
+    public long definitionDirDate = 0;
+    public static File definitionDir = new File(HOME + "/.RomRaider/Definitions");
+    private Vector<File> ecuDefinitionFiles = new Vector<File>();
+
+	private String carsDefFilePath = RR_CARS_REPO + "cars_def.xml";
+	
+    private boolean ecuDefExists = true;
+    private boolean loggerDefExists = true;
+    private boolean carsDefExists = true;
 
     private String loggerPort;
     private String loggerPortDefault;
     private static String loggerProtocol = "SSM";
     private static String loggerDefinitionFilePath;
+    private Map<File,String> availableLoggerDefFiles = new HashMap<File,String>();
+	
     private static String loggerProfileFilePath;
-    private String loggerOutputDirPath = System.getProperty("user.home");
     private String fileLoggingControllerSwitchId = "S20"; // defogger switch by default
+    private String loggerOutputDirPath = System.getProperty("user.home");
     private boolean fileLoggingControllerSwitchActive = true;
     private boolean fileLoggingAbsoluteTimestamp;
     private String logfileNameText;
@@ -128,7 +150,7 @@ public class Settings implements Serializable {
 
     private Dimension loggerWindowSize = new Dimension(1000, 600);
     private Point loggerWindowLocation = new Point();
-    private boolean loggerWindowMaximized;
+    		boolean loggerWindowMaximized;
     private int loggerSelectedTabIndex;
     private boolean loggerParameterListState = true;
     private ConnectionProperties loggerConnectionProperties;
@@ -150,20 +172,6 @@ public class Settings implements Serializable {
 
     private int editorIconScale = DEFAULT_EDITOR_ICON_SCALE;
     private int tableIconScale = DEFAULT_TABLE_ICON_SCALE;
-    
-    public static final String HOME = System.getProperty("user.home");
-    public static String gitDefsUrl = "https://github.com/Merp/SubaruDefs.git";
-	public static String gitDefsBaseDir = HOME + "/.RomRaider/Definitions/Base";
-	public static String gitDefsBranch = "RomRaiderV2Definitions";
-	public static String[] gitDefsBranches = {"Stable","Beta","Alpha","RomRaiderV2Definitions"};
-    public static final String definitionMapDir = HOME + "\\Dev\\RomRaider\\";
-    public static final String RRECUDEFREPO = HOME + "/.RomRaider/Definitions/Base/RomRaider/ecu/";
-    public static final String RRV2DIR = HOME + "/.RomRaider/Definitions/Base/RomRaiderV2/";
-    public static final String DEFDIR = HOME + "/.RomRaider/Definitions";
-    public static File ecuDefinitionDir = new File(HOME + "/.RomRaider/Definitions/rrecu");
-    public static File ecuFlashDefinitionDir = new File(RRV2DIR);
-    public long definitionDirDate = 0;
-    public static File definitionDir = new File(HOME + "/.RomRaider/Definitions");
 
     public Settings() {
         //center window by default
@@ -193,6 +201,7 @@ public class Settings implements Serializable {
     }
 
     public void addEcuDefinitionFile(File ecuDefinitionFile) {
+    	if(!ecuDefinitionFiles.contains(ecuDefinitionFile))
         ecuDefinitionFiles.add(ecuDefinitionFile);
     }
 
@@ -703,4 +712,140 @@ public class Settings implements Serializable {
             Locale.setDefault(lc);
         }
     }
+
+	public void CheckDefs()
+	{
+		//TODO: verify settings defaults exist, set flags to open DefManager if not.
+		if(ecuDefinitionFiles != null && !ecuDefinitionFiles.isEmpty())
+		{
+			for(File s : ecuDefinitionFiles)
+			{
+				if(!s.exists())
+				{
+					ecuDefExists = false;
+					removeEcuDefinitionFile(s);
+					//TODO: VERIFY THIS WORKS
+				}
+			}
+			if(ecuDefinitionFiles.isEmpty())
+				ecuDefExists = false;
+		}
+		else
+			ecuDefExists = false;
+		
+		if(availableLoggerDefFiles != null && !availableLoggerDefFiles.isEmpty())
+			availableLoggerDefFiles.clear();
+		for(File f : FilterCI(Walk(RR_LOGGER_REPO),".xml"))
+			addAvailableLoggerDefFile(f,false);
+		
+		if(!new File(loggerDefinitionFilePath).exists())
+		{
+			//handle missing settings
+			loggerDefExists = false;
+		}
+		
+		if(!new File(carsDefFilePath).exists())
+		{
+			carsDefExists = false;
+		}
+	}
+	
+	public Vector<File> Walk( String path ) {
+
+        File root = new File( path );
+        File[] list = root.listFiles();
+        Vector<File> ret = new Vector<File> ();
+
+        for ( File f : list ) {
+            if ( f.isDirectory() ) {
+                ret.addAll(Walk( f.getAbsolutePath() ));
+            }
+            else {
+                ret.add(f);
+            }
+        }
+        return ret;
+    }
+	
+	public Vector<File> FilterCI( Vector<File> files, String filter){
+		Vector<File> ret = new Vector<File>();
+		for(File f : files)
+		{
+			if(f.getName().toUpperCase().contains(filter.toUpperCase()))
+			{
+				ret.add(f);
+			}
+		}
+		return ret;
+	}
+	
+	public void removeEcuDefinitionFile(File s) {
+		ecuDefinitionFiles.remove(s);
+	}
+	
+	public void removeAvailableLoggerDef(File f) {
+		availableLoggerDefFiles.remove(f);
+	}
+
+	public boolean isEcuDefExists() {
+		return ecuDefExists;
+	}
+
+	public boolean isCarsDefExists() {
+		return carsDefExists;
+	}
+
+	public boolean isLoggerDefExists() {
+		return loggerDefExists;
+	}
+
+	public String getCarsDefFilePath() {
+		return carsDefFilePath;
+	}
+
+	public String getGitDefsUrl() {
+		return gitDefsUrl;
+	}
+
+	public void setGitDefsUrl(String gitDefsUrl) {
+		gitDefsUrl = gitDefsUrl;
+	}
+
+	public Vector<String> getGitAvailableBranches() {
+		return gitAvailableBranches;
+	}
+
+	public void setGitAvailableBranches(Vector<String> gitAvailableBranches) {
+		this.gitAvailableBranches = gitAvailableBranches;
+	}
+
+	public Map<File, String> getAvailableLoggerDefs() {
+		return getAvailableLoggerDefFiles();
+	}
+
+	public Map<File, String> getAvailableLoggerDefFiles() {
+		return availableLoggerDefFiles;
+	}
+
+	public void setAvailableLoggerDefFiles(
+			Map<File, String> availableLoggerDefs) {
+		availableLoggerDefFiles = availableLoggerDefs;
+	}
+	
+	public void addAvailableLoggerDefFile(File f, boolean useFullPath)
+	{
+		if(!getAvailableLoggerDefFiles().containsKey(f))
+		{
+			if(availableLoggerDefFiles.containsValue(f.getName()) || useFullPath)
+			{
+				availableLoggerDefFiles.put(f, f.getAbsolutePath());
+			}
+			else
+				getAvailableLoggerDefFiles().put(f,f.getName());
+		}
+	}
+
+	public void addGitAvailableBranch(String s) {
+		this.gitAvailableBranches.add(s);
+	}
 }

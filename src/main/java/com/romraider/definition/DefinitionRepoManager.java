@@ -1,18 +1,29 @@
 package com.romraider.definition;
 
+import static com.romraider.Version.ECU_DEFS_URL;
 import static javax.swing.JOptionPane.DEFAULT_OPTION;
 import static javax.swing.JOptionPane.INFORMATION_MESSAGE;
 import static javax.swing.JOptionPane.WARNING_MESSAGE;
 import static javax.swing.JOptionPane.showMessageDialog;
 import static javax.swing.JOptionPane.showOptionDialog;
 
+import java.awt.BorderLayout;
+import java.awt.Cursor;
 import java.awt.HeadlessException;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JWindow;
+
+import org.eclipse.jgit.api.CreateBranchCommand;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.ListBranchCommand.ListMode;
 import org.eclipse.jgit.api.LsRemoteCommand;
 import org.eclipse.jgit.api.errors.CanceledException;
 import org.eclipse.jgit.api.errors.CheckoutConflictException;
@@ -31,25 +42,137 @@ import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.RefSpec;
+import org.eclipse.jgit.util.FileUtils;
 
+import com.centerkey.utils.BareBonesBrowserLaunch;
+import com.romraider.ECUExec;
 import com.romraider.Settings;
+import com.romraider.editor.ecu.ECUEditor;
+import com.romraider.logger.ecu.EcuLogger;
 import com.romraider.swing.AbstractFrame;
 
-public final class DefinitionRepoManager {
+public final class DefinitionRepoManager extends AbstractFrame{
 
-	private AbstractFrame parent;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8376649924531989081L;
+	private Settings settings = ECUExec.settings;
     private Repository gitRepo;
+    private Git git;
+    private JWindow startStatus;
+    private final JLabel startText = new JLabel(" Initializing Defintion Repo");
+    private JProgressBar progressBar = startbar();
 	
-	public DefinitionRepoManager(AbstractFrame p){
-		parent = p;
+	public DefinitionRepoManager(){
 	}
 	
-	public boolean InitAndCheckRepoExists(){
+	public void Load(){
+		setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		UpdateStatus("Checking Definition Repo Status...",10);
+    	
+        try{
+        	if(!InitAndCheckRepoExists())
+	        {
+	        	UpdateStatus("Downloading Definition Repo...",50);
+	        	DownloadRepo();
+	        }
+	        else
+	        {
+	        	UpdateStatus("Updating Definition Repo...",75);
+	        	UpdateDefRepo();
+	        }
+	        setCursor(null);
+	        this.startStatus.dispose();        
+        }catch(Exception e){
+        	e.printStackTrace();
+        	showMessageDialog(this,
+                    "Error configuring definition repository, configure definitions manually!\nError: " + e.getMessage(),
+                    "Definition repository configuration failed.",
+                    INFORMATION_MESSAGE);
+        	if (settings.getEcuDefinitionFiles().size() <= 0) {
+                // no ECU definitions configured - let user choose to get latest or configure later
+                Object[] options = {"Yes", "No"};
+                int answer = showOptionDialog(null,
+                        "Unable to configure ECU definition repository.\nGo online to download the latest definition files?",
+                        "Editor Configuration",
+                        DEFAULT_OPTION,
+                        WARNING_MESSAGE,
+                        null,
+                        options,
+                        options[0]);
+                if (answer == 0) {
+                    BareBonesBrowserLaunch.openURL(ECU_DEFS_URL);
+                } else {
+                    showMessageDialog(this,
+                            "ECU definition files need to be configured before ROM images can be opened.\nMenu: ECU Definitions > ECU Definition Manager...",
+                            "Editor Configuration",
+                            INFORMATION_MESSAGE);
+                }
+    	        
+            }
+        }
+	}
+
 	
+//	public void Run(){
+//
+//    	parentEditor.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+//    	parentEditor.statusPanel.update("Checking Definition Repo Status...",10);
+//    	
+//        try{
+//        	if(!InitAndCheckRepoExists())
+//	        {
+//	        	parentEditor.statusPanel.update("Downloading Definition Repo...",50);
+//	        	DownloadRepo();
+//	        }
+//	        else
+//	        {
+//	        	parentEditor.statusPanel.update("Updating Definition Repo...",75);
+//	        	UpdateDefRepo();
+//	        }
+//        	showMessageDialog(parentEditor,
+//                    "Definition repository successfully configured! ECU definition file(s) must be selected before ROM images can be opened.\nMenu: ECU Definitions > ECU Definition Manager...",
+//                    "Editor Configuration",
+//                    INFORMATION_MESSAGE);
+//        	
+//	        parentEditor.statusPanel.update("Ready...",0);
+//	        parentEditor.setCursor(null);
+//	       
+//        }catch(Exception e){
+//        	showMessageDialog(parentEditor,
+//                    "Error configuring definition repository, configure definitions manually!\nError: " + e.getMessage(),
+//                    "Definition repository configuration failed.",
+//                    INFORMATION_MESSAGE);
+//        	if (parentEditor.getSettings().getEcuDefinitionFiles().size() <= 0) {
+//                // no ECU definitions configured - let user choose to get latest or configure later
+//                Object[] options = {"Yes", "No"};
+//                int answer = showOptionDialog(null,
+//                        "Unable to configure ECU definition repository.\nGo online to download the latest definition files?",
+//                        "Editor Configuration",
+//                        DEFAULT_OPTION,
+//                        WARNING_MESSAGE,
+//                        null,
+//                        options,
+//                        options[0]);
+//                if (answer == 0) {
+//                    BareBonesBrowserLaunch.openURL(ECU_DEFS_URL);
+//                } else {
+//                    showMessageDialog(parentEditor,
+//                            "ECU definition files need to be configured before ROM images can be opened.\nMenu: ECU Definitions > ECU Definition Manager...",
+//                            "Editor Configuration",
+//                            INFORMATION_MESSAGE);
+//                }
+//    	        
+//            }
+//        }
+//	}
+//	
+	public boolean InitAndCheckRepoExists(){
 		gitRepo = gitInit(Settings.gitDefsBaseDir);
 		Ref hurr;
 		try {
-			hurr = gitRepo.getRef(Settings.gitDefsBranch);
+			hurr = gitRepo.getRef(settings.gitDefsBranch);
 			if(hurr == null)
 				return false;
 			else
@@ -58,22 +181,23 @@ public final class DefinitionRepoManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return false;
+		return false;    
 	}
 	
 	public void DownloadRepo(){
-				showMessageDialog(parent,
-	                "Definition files are missing, downloading most up to date set from: " + Settings.gitDefsUrl + "***###This may take a few minutes!!!###***",
+				showMessageDialog(this,
+	                "Definition files are missing, downloading most up to date set from: " + settings.getGitDefsUrl() + " This may take a few minutes!!",
 	                "Definition Configuration",
 	                INFORMATION_MESSAGE);
 				try {
-					gitClone(Settings.gitDefsUrl, Settings.gitDefsBaseDir);
+					
+					gitClone(settings.getGitDefsUrl(), settings.gitDefsBaseDir);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}//TODO make this work: Settings.getGitDefsBranch());
 				
-				showMessageDialog(parent,
+				showMessageDialog(this,
 	                    "Definitions successfully updated!",
 	                    "Definition Configuration",
 	                    INFORMATION_MESSAGE);
@@ -81,7 +205,7 @@ public final class DefinitionRepoManager {
 	
 	public void UpdateDefRepo() {
 		try {
-			if(!gitCompare(Settings.gitDefsUrl, Settings.gitDefsBranch, gitRepo)){
+			if(!gitCompare(settings.getGitDefsUrl(), settings.gitDefsBranch, gitRepo)){
 
 			    Object[] options = {"Do it. Do it.","Maybe Later"};
 			    int answer = showOptionDialog(null,
@@ -96,10 +220,10 @@ public final class DefinitionRepoManager {
 			    	//These lines will pull-merge. Not useful here, but maybe somewhere else.
 			    	//Git tempGit = new Git(gitRepo);
 			    	//tempGit.pull().call();
-			    	File tempFile = new File(Settings.gitDefsBaseDir);
+			    	File tempFile = new File(settings.gitDefsBaseDir);
 			    	delete(tempFile);
 
-			    	gitClone(Settings.gitDefsUrl, Settings.gitDefsBaseDir);            	
+			    	gitClone(settings.getGitDefsUrl(), settings.gitDefsBaseDir);            	
 			    }
 			}
 		} catch (IOException e) {
@@ -129,48 +253,76 @@ public final class DefinitionRepoManager {
 
 	public void gitClone(String url, String path) throws IOException{
 		try {
-			Git.cloneRepository()
-				.setURI(url)
-				.setDirectory(new File(path + "/"))
-				.setCloneAllBranches(true)
-				.setTimeout(10000)
-				.call();
-		} catch (InvalidRemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (TransportException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (GitAPIException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		Git tg = new Git(gitRepo);
-		try {
-			for (String branch : Settings.gitDefsBranches)
+			
+			delDir(new File(path));
+			
+			git = Git.cloneRepository()
+					.setURI(url)
+					.setDirectory(new File(path + "/"))
+					.setCloneAllBranches(true)
+					//.setTimeout(10000)
+					.call();
+			
+			List<Ref> bl = git.branchList().setListMode(ListMode.REMOTE).call();
+			
+			for(Ref r : bl)
 			{
-				tg.fetch().setRemote("origin")
-				.setRefSpecs(new RefSpec("refs/heads/" + branch + ":refs/heads/" + branch))
-				.call();
+				String rbranch = r.getName().replace("refs/heads/", "").replace("refs/remotes/origin/", "");
+				String originbranch = r.getName().replace("/heads/", "/remotes/").replace("refs/remotes/origin/", "origin/");
+				settings.addGitAvailableBranch(rbranch);
+				try{
+					String rs = r.getName();
+					git.branchCreate()
+					//.setForce(true)
+					.setName(rbranch)
+			        .setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)
+			        .setStartPoint("origin/" + rbranch)
+			        .call();
+//					git.fetch()
+//					.setRemote("origin")
+//					.setRefSpecs(new RefSpec(r.getTarget().getName()))
+//					.call();
+				} catch (GitAPIException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		} catch (GitAPIException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	
-		gitInit(path);
+		//gitInit(path);
 		try {
-			gitCheckout(Settings.gitDefsBranch);
+			gitCheckout(settings.gitDefsBranch);
 		} catch (GitAPIException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	
-	private void gitCheckout(String gitDefsBranch) throws RefAlreadyExistsException, RefNotFoundException, InvalidRefNameException, CheckoutConflictException, GitAPIException {
-		Git tempGit = new Git(gitRepo);
-		tempGit.checkout().setName(Settings.gitDefsBranch).call();
+	public static boolean delDir(File directory) {
+	    if(directory.exists()){
+	        File[] files = directory.listFiles();
+	        if(null!=files){
+	            for(int i=0; i<files.length; i++) {
+	                if(files[i].isDirectory()) {
+	                    delDir(files[i]);
+	                }
+	                else {
+	                    files[i].delete();
+	                }
+	            }
+	        }
+	    }
+	    return(directory.delete());
+	}
+	
+	private void gitCheckout(String s) throws RefAlreadyExistsException, RefNotFoundException, InvalidRefNameException, CheckoutConflictException, GitAPIException {
+		//Git tempGit = new Git(gitRepo);
+		git = new Git(gitRepo);
+		List<Ref> rl = git.branchList().setListMode(ListMode.ALL).call();
+		git.checkout().setName(s).call();
 	}
 	
 	public static void gitClone(String url, String path, List<String> branches) throws IOException{
@@ -258,5 +410,32 @@ public final class DefinitionRepoManager {
 			System.out.println("File is deleted : " + td.getAbsolutePath());
 		}
 	}
+	
+	public void UpdateStatus(String s, int i){
+		progressBar.setValue(i);
+        startText.setText(s);
+	}
+	
+	private JProgressBar startbar() {
+        startStatus = new JWindow();
+        startStatus.setAlwaysOnTop(true);
+        startStatus.setLocation(
+                (int)(settings.getLoggerWindowSize().getWidth()/2 + settings.getLoggerWindowLocation().getX() - 150),
+                (int)(settings.getLoggerWindowSize().getHeight()/2 + settings.getLoggerWindowLocation().getY() - 36));
+        JProgressBar progressBar = new JProgressBar(0, 100);
+        progressBar.setValue(0);
+        progressBar.setIndeterminate(false);
+        progressBar.setOpaque(true);
+        startText.setOpaque(true);
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+        panel.setBorder(BorderFactory.createEtchedBorder());
+        panel.add(progressBar, BorderLayout.CENTER);
+        panel.add(startText, BorderLayout.SOUTH);
+        startStatus.getContentPane().add(panel);
+        startStatus.pack();
+        startStatus.setVisible(true);
+        return progressBar;
+    }
 
 }

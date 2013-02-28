@@ -312,7 +312,7 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
             form.setVisible(true);
 
         } else if (e.getSource() == defManager) {
-            DefinitionManager form = new DefinitionManager(parent);
+            DefinitionManager form = new DefinitionManager();
             form.setLocationRelativeTo(parent);
             form.setVisible(true);
 

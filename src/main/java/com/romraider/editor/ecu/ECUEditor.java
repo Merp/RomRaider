@@ -73,6 +73,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXParseException;
 
 import com.centerkey.utils.BareBonesBrowserLaunch;
+import com.romraider.ECUExec;
 import com.romraider.Settings;
 import com.romraider.definition.DefinitionRepoManager;
 import com.romraider.logger.ecu.EcuLogger;
@@ -113,7 +114,7 @@ public class ECUEditor extends AbstractFrame {
     private Rom lastSelectedRom = null;
     private ECUEditorToolBar toolBar;
     private final ECUEditorMenuBar menuBar;
-    private Settings settings;
+    private Settings settings = ECUExec.settings;
     private final TableToolBar tableToolBar;
     private final JPanel toolBarPanel = new JPanel();
     private OpenImageWorker openImageWorker;
@@ -121,12 +122,10 @@ public class ECUEditor extends AbstractFrame {
     private SetUserLevelWorker setUserLevelWorker;
     private LaunchLoggerWorker launchLoggerWorker;
     private final ImageIcon editorIcon = new ImageIcon(getClass().getResource("/graphics/romraider-ico.gif"), "RomRaider ECU Editor");
-    private DefinitionRepoManager definitionRepoManager;
-
+    private DefinitionManager definitionManager = new DefinitionManager();
+	private DefinitionRepoManager definitionRepoManager = ECUExec.definitionRepoManager;
+	
     public ECUEditor() {
-
-        // get settings from xml
-        settings = settingsManager.load();
 
         if (!settings.getRecentVersion().equalsIgnoreCase(VERSION)) {
             showReleaseNotes();
@@ -182,84 +181,7 @@ public class ECUEditor extends AbstractFrame {
         addWindowListener(this);
         setTitle(titleText);
         setVisible(true);
-        
-        //Initialize, check, download, update Git Definition Repository
-    	definitionRepoManager = new DefinitionRepoManager(this);
-    	setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        
-        statusPanel.update("Checking Definition Repo Status...",10);
-        
-        try{
-        	if(!getDefinitionRepoManager().InitAndCheckRepoExists())
-	        {
-	        	statusPanel.update("Downloading Definition Repo...",50);
-	        	getDefinitionRepoManager().DownloadRepo();
-	        }
-	        else
-	        {
-	        	statusPanel.update("Updating Definition Repo...",75);
-	        	getDefinitionRepoManager().UpdateDefRepo();
-	        }
-        	showMessageDialog(this,
-                    "Definition repository successfully configured! ECU definition file(s) must be selected before ROM images can be opened.\nMenu: ECU Definitions > ECU Definition Manager...",
-                    "Editor Configuration",
-                    INFORMATION_MESSAGE);
-        	
-	        statusPanel.update("Ready...",0);
-	        setCursor(null);
-	       
-        }catch(Exception e){
-        	showMessageDialog(this,
-                    "Error configuring definition repository, configure definitions manually!\nError: " + e.getMessage(),
-                    "Definition repository configuration failed.",
-                    INFORMATION_MESSAGE);
-        	if (settings.getEcuDefinitionFiles().size() <= 0) {
-                // no ECU definitions configured - let user choose to get latest or configure later
-                Object[] options = {"Yes", "No"};
-                int answer = showOptionDialog(null,
-                        "Unable to configure ECU definition repository.\nGo online to download the latest definition files?",
-                        "Editor Configuration",
-                        DEFAULT_OPTION,
-                        WARNING_MESSAGE,
-                        null,
-                        options,
-                        options[0]);
-                if (answer == 0) {
-                    BareBonesBrowserLaunch.openURL(ECU_DEFS_URL);
-                } else {
-                    showMessageDialog(this,
-                            "ECU definition files need to be configured before ROM images can be opened.\nMenu: ECU Definitions > ECU Definition Manager...",
-                            "Editor Configuration",
-                            INFORMATION_MESSAGE);
-                }
-    	        
-            }
-        }
-        
-        DefinitionManager definitionManager = new DefinitionManager(this);
-        definitionManager.run(true,tDMWL);
-    }
 
-    private WindowListener tDMWL = new WindowAdapter() {
-    	@Override public void windowClosed(WindowEvent evt){
-    		CheckEcuDefList();
-    	};
-    };
-    
-    private void CheckEcuDefList() {
-    	if (settings.getEcuDefinitionFiles().size() <= 0) {
-            showMessageDialog(this,
-                        "ECU definition files need to be configured before ROM images can be opened.\nMenu: ECU Definitions > ECU Definition Manager...",
-                        "Editor Configuration",
-                        INFORMATION_MESSAGE);
-        }
-    	else
-    	{
-    		showMessageDialog(this,
-                    "ECU Definition Ninja",
-                    "Achievement Unlocked",
-                    INFORMATION_MESSAGE);
-    	}
     }
 
     private void showReleaseNotes() {
