@@ -12,8 +12,10 @@ import java.awt.Cursor;
 import java.awt.HeadlessException;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
@@ -22,33 +24,26 @@ import javax.swing.JProgressBar;
 import javax.swing.JWindow;
 
 import org.eclipse.jgit.api.CreateBranchCommand;
+import org.eclipse.jgit.api.CreateBranchCommand.SetupUpstreamMode;
+import org.eclipse.jgit.api.FetchCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand.ListMode;
 import org.eclipse.jgit.api.LsRemoteCommand;
-import org.eclipse.jgit.api.errors.CanceledException;
-import org.eclipse.jgit.api.errors.CheckoutConflictException;
-import org.eclipse.jgit.api.errors.DetachedHeadException;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.InvalidConfigurationException;
 import org.eclipse.jgit.api.errors.InvalidRefNameException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
-import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
 import org.eclipse.jgit.api.errors.RefNotFoundException;
 import org.eclipse.jgit.api.errors.TransportException;
-import org.eclipse.jgit.api.errors.WrongRepositoryStateException;
-import org.eclipse.jgit.lib.ProgressMonitor;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.RefSpec;
-import org.eclipse.jgit.util.FileUtils;
 
 import com.centerkey.utils.BareBonesBrowserLaunch;
 import com.romraider.ECUExec;
 import com.romraider.Settings;
-import com.romraider.editor.ecu.ECUEditor;
-import com.romraider.logger.ecu.EcuLogger;
 import com.romraider.swing.AbstractFrame;
 
 public final class DefinitionRepoManager extends AbstractFrame{
@@ -58,8 +53,8 @@ public final class DefinitionRepoManager extends AbstractFrame{
 	 */
 	private static final long serialVersionUID = -8376649924531989081L;
 	private Settings settings = ECUExec.settings;
-    private Repository gitRepo;
-    private Git git;
+    private static Repository gitRepo;
+    private static Git git;
     private JWindow startStatus;
     private final JLabel startText = new JLabel(" Initializing Defintion Repo");
     private JProgressBar progressBar = startbar();
@@ -68,7 +63,6 @@ public final class DefinitionRepoManager extends AbstractFrame{
 	}
 	
 	public void Load(){
-		setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 		UpdateStatus("Checking Definition Repo Status...",10);
     	
         try{
@@ -80,9 +74,11 @@ public final class DefinitionRepoManager extends AbstractFrame{
 	        else
 	        {
 	        	UpdateStatus("Updating Definition Repo...",75);
-	        	UpdateDefRepo();
+		    	setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+	        	FetchAll();
+	        	CheckoutBranch(settings.getGitBranch());
+	        	setCursor(null);
 	        }
-	        setCursor(null);
 	        this.startStatus.dispose();        
         }catch(Exception e){
         	e.printStackTrace();
@@ -168,137 +164,206 @@ public final class DefinitionRepoManager extends AbstractFrame{
 //        }
 //	}
 //	
+	
+	/**
+	 * Checks that we have a git repo containing our desired branch
+	 * @return
+	 */
 	public boolean InitAndCheckRepoExists(){
-		gitRepo = gitInit(Settings.gitDefsBaseDir);
-		Ref hurr;
 		try {
-			hurr = gitRepo.getRef(settings.gitDefsBranch);
-			if(hurr == null)
-				return false;
-			else
-				return true;
-		}catch (IOException e) {
+			gitRepo = initRepo(Settings.getGitDefsBaseDir());
+			git = new Git(gitRepo);
+			return CheckLocalBranchExists(gitRepo, settings.getGitBranch());
+		} catch (IOException e1) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			e1.printStackTrace();
+			return false;
 		}
-		return false;    
 	}
 	
 	public void DownloadRepo(){
-				showMessageDialog(this,
-	                "Definition files are missing, downloading most up to date set from: " + settings.getGitDefsUrl() + " This may take a few minutes!!",
-	                "Definition Configuration",
-	                INFORMATION_MESSAGE);
-				try {
-					
-					gitClone(settings.getGitDefsUrl(), settings.gitDefsBaseDir);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}//TODO make this work: Settings.getGitDefsBranch());
-				
-				showMessageDialog(this,
-	                    "Definitions successfully updated!",
-	                    "Definition Configuration",
-	                    INFORMATION_MESSAGE);
+		showMessageDialog(this,
+            "Definition files are missing, downloading most up to date set from: " + Settings.defaultGitUrl + " This may take a few minutes!!",
+            "Definition Configuration",
+            INFORMATION_MESSAGE);
+		try {
+			
+	    	setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+			gitClone(Settings.defaultGitUrl, Settings.defaultGitRemote, Settings.getGitDefsBaseDir(), settings.getGitBranch());
+			setCursor(null);
+			
+			showMessageDialog(this,
+                "Definitions successfully updated!",
+                "Definition Configuration",
+                INFORMATION_MESSAGE);
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
-	public void UpdateDefRepo() {
+	public void UpdateDefRepo(String remote, String branch) {
 		try {
-			if(!gitCompare(settings.getGitDefsUrl(), settings.gitDefsBranch, gitRepo)){
-
-			    Object[] options = {"Do it. Do it.","Maybe Later"};
-			    int answer = showOptionDialog(null,
-			            "ECU definition repository is out of date\n Would you like to update??",
-			            "Editor Configuration",
-			            DEFAULT_OPTION,
-			            WARNING_MESSAGE,
-			            null,
-			            options,
-			            options[0]);
-			    if (answer == 0) {
-			    	//These lines will pull-merge. Not useful here, but maybe somewhere else.
-			    	//Git tempGit = new Git(gitRepo);
-			    	//tempGit.pull().call();
-			    	File tempFile = new File(settings.gitDefsBaseDir);
-			    	delete(tempFile);
-
-			    	gitClone(settings.getGitDefsUrl(), settings.gitDefsBaseDir);            	
-			    }
-			}
-		} catch (IOException e) {
+			//Basically, fetch all, and checkout.
+			git.fetch()
+				.setRemote(remote)
+				.setRemoveDeletedRefs(true)
+				.call();
+			
+			this.UpdateAllBranches(ECUExec.settings.getGitRemotes().get(remote), branch);
+			
+//			if(!gitCompareToRemote(remote, gitBranch, gitRepo)){
+//
+//			    Object[] options = {"Do it. Do it.","Maybe Later"};
+//			    int answer = showOptionDialog(null,
+//			            "ECU definition repository branch" + gitBranch + " is out of date\n Would you like to update it??",
+//			            "Editor Configuration",
+//			            DEFAULT_OPTION,
+//			            WARNING_MESSAGE,
+//			            null,
+//			            options,
+//			            options[0]);
+//			    if (answer == 0) {
+//			    	
+//			    	File tempFile = new File(Settings.getGitDefsBaseDir());
+//			    	delete(tempFile); //TODO: is this necessary??
+//			    	UpdateBranch(gitRepo.getRef(gitBranch));
+//			    }
+//			}
+		} catch (HeadlessException | GitAPIException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
-	public static Repository gitInit(String path){
-		
-		FileRepositoryBuilder builder = new FileRepositoryBuilder();
-		Repository repository = null;
-		try {
-			repository = builder.setGitDir(new File(path + "/.git"))
-			  .readEnvironment() // scan environment GIT_* variables
-			  .findGitDir() // scan up the file system tree
-			  .build();
-		
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		return repository;
-		
-	}
-
-	public void gitClone(String url, String path) throws IOException{
+	public void gitClone(String url, String remote, String path, String checkoutBranch) throws IOException{
 		try {
 			
 			delDir(new File(path));
 			
 			git = Git.cloneRepository()
+					.setRemote(remote)
 					.setURI(url)
 					.setDirectory(new File(path + "/"))
-					.setCloneAllBranches(true)
+					//.setCloneAllBranches(true)
 					//.setTimeout(10000)
 					.call();
+			FetchAll();//UpdateAllBranches(url, checkoutBranch);
 			
-			List<Ref> bl = git.branchList().setListMode(ListMode.REMOTE).call();
-			
+		} catch (GitAPIException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private void FetchAll()
+	{
+		List<Ref> bl;
+		try {
+			bl = git.branchList().setListMode(ListMode.REMOTE).call();
+			List<String> tl = new ArrayList<String>();
 			for(Ref r : bl)
 			{
-				String rbranch = r.getName().replace("refs/heads/", "").replace("refs/remotes/origin/", "");
-				String originbranch = r.getName().replace("/heads/", "/remotes/").replace("refs/remotes/origin/", "origin/");
-				settings.addGitAvailableBranch(rbranch);
-				try{
-					String rs = r.getName();
-					git.branchCreate()
-					//.setForce(true)
-					.setName(rbranch)
-			        .setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)
-			        .setStartPoint("origin/" + rbranch)
-			        .call();
-//					git.fetch()
-//					.setRemote("origin")
-//					.setRefSpecs(new RefSpec(r.getTarget().getName()))
-//					.call();
-				} catch (GitAPIException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				String[] bra = r.getName().split("/");
+				String rem = bra[bra.length-2];
+				if(!tl.contains(rem))
+				{
+					tl.add(rem);
+					git.fetch().setRemote(rem);
 				}
 			}
 		} catch (GitAPIException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
 	
-		//gitInit(path);
+	private void UpdateAllBranches(String url, String checkoutBranch) throws GitAPIException
+	{
+		List<Ref> bl = git.branchList().setListMode(ListMode.REMOTE).call();
+		
+		for(Ref r : bl)
+		{
+			try{
+				UpdateBranch(r);
+			} catch (GitAPIException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		CheckoutBranch(settings.getGitBranch());
+	}
+	
+	private void UpdateBranch(Ref r) throws RefAlreadyExistsException, RefNotFoundException, InvalidRefNameException, GitAPIException
+	{
+		String sbranch = Repository.shortenRefName(r.getName());
+		git.branchCreate()
+		.setForce(true)
+		.setName(sbranch)
+        .setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)
+        .setStartPoint(sbranch)//"origin/" + branch)
+        .call();
+		settings.setGitBranch(sbranch);
+	}
+
+	public void CheckoutBranch(String s) {
+		git = new Git(gitRepo);
 		try {
-			gitCheckout(settings.gitDefsBranch);
+			git.checkout().setName(s).setUpstreamMode(SetupUpstreamMode.TRACK).call();
+			settings.setGitBranch(s);
 		} catch (GitAPIException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	public static void gitClone(String url, String path, List<String> branches) throws IOException, InvalidRemoteException, TransportException, GitAPIException{
+		Git.cloneRepository()
+			.setURI(url)
+			.setDirectory(new File(path + "/"))
+			.setBranchesToClone(branches)
+			.setTimeout(10000)
+			.call();
+		gitRepo = initRepo(path);
+	}
+	
+//	public static boolean gitCompareToRemote(String remote, String branch, Repository repo) throws IOException, InvalidRemoteException, TransportException, GitAPIException{
+//			LsRemoteCommand lsrc = new LsRemoteCommand(repo);
+//			lsrc.setHeads(true);
+//			lsrc.setTags(true);
+//			lsrc.setRemote(ECUExec.settings.getGitRemotes().get(remote));
+//			Collection<Ref> derp = lsrc.call();
+//			for(Ref ref : derp){
+//				String remRef = Repository.shortenRefName(ref.getName());
+//				String loRef = Repository.shortenRefName(repo.getRef(branch));
+//				Ref reff = repo.getRef(branch);
+//				if(
+//					if(reff.getObjectId().equals(ref.getObjectId())) {
+//					return true;
+//					}
+//				}
+//			}
+//			return false;
+//	}
+
+	public static Repository initRepo(String path) throws IOException{
+		FileRepositoryBuilder builder = new FileRepositoryBuilder();
+		Repository repository = null;
+		repository = builder.setGitDir(new File(path + "/.git"))
+		  .readEnvironment() // scan environment GIT_* variables
+		  .findGitDir() // scan up the file system tree
+		  .build();
+		return repository;
+	}
+	
+	public boolean CheckLocalBranchExists(Repository repo, String branch) throws IOException{
+		Ref hurr;
+		hurr = repo.getRef(branch);
+		if(hurr == null)
+			return false;
+		else
+			return true;
 	}
 	
 	public static boolean delDir(File directory) {
@@ -318,62 +383,6 @@ public final class DefinitionRepoManager extends AbstractFrame{
 	    return(directory.delete());
 	}
 	
-	private void gitCheckout(String s) throws RefAlreadyExistsException, RefNotFoundException, InvalidRefNameException, CheckoutConflictException, GitAPIException {
-		//Git tempGit = new Git(gitRepo);
-		git = new Git(gitRepo);
-		List<Ref> rl = git.branchList().setListMode(ListMode.ALL).call();
-		git.checkout().setName(s).call();
-	}
-	
-	public static void gitClone(String url, String path, List<String> branches) throws IOException{
-			try {
-				Git.cloneRepository()
-					.setURI(url)
-					.setDirectory(new File(path + "/"))
-					.setBranchesToClone(branches)
-					.setTimeout(10000)
-					.call();
-			} catch (InvalidRemoteException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (TransportException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (GitAPIException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		gitInit(path);
-	}
-	
-	public static boolean gitCompare(String url, String branch, Repository repo) throws IOException{
-			LsRemoteCommand lsrc = new LsRemoteCommand(repo);
-			lsrc.setHeads(true);
-			lsrc.setTags(true);
-			lsrc.setRemote(url);
-			try {
-				Collection<Ref> derp = lsrc.call();
-				for(Ref ref : derp){
-					if(ref.getName().contains(branch)){
-						Ref reff = repo.getRef(branch);
-						if(reff.getObjectId().equals(ref.getObjectId())) {
-						return true;
-						}
-					}
-					
-				}
-			} catch (InvalidRemoteException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (TransportException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (GitAPIException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			return false;
-	}
 	public static void delete(File td){
 		if(td.isDirectory()){
 	    	//directory is empty, then delete it
@@ -417,7 +426,8 @@ public final class DefinitionRepoManager extends AbstractFrame{
 	}
 	
 	private JProgressBar startbar() {
-        startStatus = new JWindow();
+        startStatus = new JWindow();	
+        startStatus.setSize(300,50);
         startStatus.setAlwaysOnTop(true);
         startStatus.setLocation(
                 (int)(settings.getLoggerWindowSize().getWidth()/2 + settings.getLoggerWindowLocation().getX() - 150),
@@ -435,7 +445,70 @@ public final class DefinitionRepoManager extends AbstractFrame{
         startStatus.getContentPane().add(panel);
         startStatus.pack();
         startStatus.setVisible(true);
+        progressBar.setVisible(true);
         return progressBar;
     }
 
+	public Vector<String> getAvailableLocalBranches() {
+		// TODO Auto-generated method stub
+		Vector<String> tv = new Vector<String>();
+		try {
+			List<Ref> trl = git.branchList().setListMode(ListMode.ALL).call();
+			for(Ref r : trl)
+			{
+				if(!r.getName().contains("remotes"))
+				{
+					tv.add(r.getName().replace("refs/heads/", ""));
+				}
+			}
+		} catch (GitAPIException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return tv;
+	}
+	
+	public Vector<String> getAvailableBranches() {
+		// TODO Auto-generated method stub
+		Vector<String> tv = new Vector<String>();
+		try {
+			List<Ref> trl = git.branchList().setListMode(ListMode.REMOTE).call();
+			for(Ref r : trl)
+			{
+				tv.add(r.getName()); //Repository.shortenRefName(r.getName()));
+			}
+		} catch (GitAPIException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return tv;
+	}
+
+	public String getCurrentBranch() {
+		try {
+			return gitRepo.getFullBranch();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	public void AddRemote(String name, String url) {
+		StoredConfig config = git.getRepository().getConfig();
+		ArrayList<String> tsl = new ArrayList<String>();
+		config.setString("remote", name, "url",url);
+		config.setString("remote",name, "fetch", "+refs/heads/*:refs/remotes/" + name + "/*");
+		try {
+			config.save();
+			this.initRepo(settings.getGitDefsBaseDir());
+			git.init().call();
+			//TODO SET GIT REMOTE??
+			git.fetch().setRemote(name).call();
+			settings.addGitRemote(url, name);
+		} catch (IOException | GitAPIException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
+	}
 }
