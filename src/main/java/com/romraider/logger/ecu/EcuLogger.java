@@ -356,7 +356,6 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     }
 
     private void bootstrap() {
-    	//TODO call the repomanager from here? or do it in ecuexec?
         EcuInitCallback ecuInitCallback = new EcuInitCallback() {
             @Override
             public void callback(EcuInit newEcuInit) {
@@ -394,8 +393,6 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
                 }
             }
         };
-        definitionRepoManager = new DefinitionRepoManager();
-        //.Run();
         fileUpdateHandler = new FileUpdateHandlerImpl(settings, this);
         dataTableModel = new LiveDataTableModel();
         liveDataUpdateHandler = new LiveDataUpdateHandler(dataTableModel);
