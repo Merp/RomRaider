@@ -31,6 +31,7 @@ import java.awt.Point;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Locale;
+import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
@@ -113,18 +114,22 @@ public class Settings implements Serializable {
     private int tableClickCount = 1; // number of clicks to open table
     
     public static final String HOME = System.getProperty("user.home");
-    private String gitDefsUrl = "http://github.com/RomRaider/SubaruDefs.git";
-	public static String gitDefsBaseDir = HOME + "/.RomRaider/Definitions/Base";
-	private Vector<String> gitAvailableBranches = new Vector<String>();
+    public static final String defaultGitUrl = "http://github.com/RomRaider/SubaruDefs.git";
+    public static final String defaultGitRemote = "romraider";
+	public static final String gitDefsBaseDir = HOME + "/.RomRaider/SubaruDefs";
+
 	
+	private String gitCurrentRemote;
+	private Map<String,String> gitRemotes = new HashMap<String,String>(); //TODO make these persistent
+
+	private String gitCurrentBranch = "/refs/remotes/romraider/Alpha"; //TODO make this persistent
 	
-	public String gitDefsBranch = "Alpha";
-    public static final String RRECUDEFREPO = HOME + "/.RomRaider/Definitions/Base/RomRaider/ecu/";
-    public static final String RR_LOGGER_REPO = HOME + "/.RomRaider/Definitions/Base/RomRaider/logger/";
-    public static final String RR_CARS_REPO = HOME + "/.RomRaider/Definitions/Base/RomRaider/dyno/";
-    static final String DEFDIR = HOME + "/.RomRaider/Definitions";
+    public static final String RRECUDEFREPO = HOME + "/.RomRaider/SubaruDefs/RomRaider/ecu/";
+    public static final String RR_LOGGER_REPO = HOME + "/.RomRaider/SubaruDefs/RomRaider/logger/";
+    public static final String RR_CARS_REPO = HOME + "/.RomRaider/SubaruDefs/RomRaider/dyno/";
+    
     public long definitionDirDate = 0;
-    public static File definitionDir = new File(HOME + "/.RomRaider/Definitions");
+    public static File definitionDir = new File(HOME + "/.RomRaider");
     private Vector<File> ecuDefinitionFiles = new Vector<File>();
 
 	private String carsDefFilePath = RR_CARS_REPO + "cars_def.xml";
@@ -136,8 +141,8 @@ public class Settings implements Serializable {
     private String loggerPort;
     private String loggerPortDefault;
     private static String loggerProtocol = "SSM";
-    private static String loggerDefinitionFilePath;
-    private Map<File,String> availableLoggerDefFiles = new HashMap<File,String>();
+    private String loggerDefFilePath;
+    private Map<String,File> availableLoggerDefFiles = new HashMap<String,File>(); //TODO Make persistent
 	
     private static String loggerProfileFilePath;
     private String fileLoggingControllerSwitchId = "S20"; // defogger switch by default
@@ -178,6 +183,8 @@ public class Settings implements Serializable {
         Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         windowLocation.move(((int) (screenSize.getWidth() - windowSize.getWidth()) / 2),
                 ((int) (screenSize.getHeight() - windowSize.getHeight()) / 2));
+        gitCurrentRemote = defaultGitRemote;
+    	gitRemotes.put(defaultGitRemote, defaultGitUrl);
     }
 
     public Dimension getWindowSize() {
@@ -425,14 +432,6 @@ public class Settings implements Serializable {
 
     public static String getLoggerProtocol() {
         return loggerProtocol;
-    }
-
-    public static String getLoggerDefinitionFilePath() {
-        return loggerDefinitionFilePath;
-    }
-
-    public void setLoggerDefinitionFilePath(String loggerDefinitionFilePath) {
-        Settings.loggerDefinitionFilePath = loggerDefinitionFilePath;
     }
 
     public String getLoggerOutputDirPath() {
@@ -715,34 +714,52 @@ public class Settings implements Serializable {
 
 	public void CheckDefs()
 	{
+		for(File f : FilterCI(Walk(RRECUDEFREPO),".xml"))
+			addEcuDefinitionFile(f);
 		//TODO: verify settings defaults exist, set flags to open DefManager if not.
 		if(ecuDefinitionFiles != null && !ecuDefinitionFiles.isEmpty())
 		{
+			ArrayList<File> reml = new ArrayList<File>();
 			for(File s : ecuDefinitionFiles)
 			{
 				if(!s.exists())
 				{
 					ecuDefExists = false;
-					removeEcuDefinitionFile(s);
-					//TODO: VERIFY THIS WORKS
+					reml.add(s);//TODO ABSTRACT THIS
 				}
 			}
+			for(File r : reml)
+			{
+				ecuDefinitionFiles.remove(r);
+			}
+			
 			if(ecuDefinitionFiles.isEmpty())
 				ecuDefExists = false;
 		}
 		else
 			ecuDefExists = false;
 		
-		if(availableLoggerDefFiles != null && !availableLoggerDefFiles.isEmpty())
-			availableLoggerDefFiles.clear();
 		for(File f : FilterCI(Walk(RR_LOGGER_REPO),".xml"))
 			addAvailableLoggerDefFile(f,false);
-		
-		if(!new File(loggerDefinitionFilePath).exists())
+		if(!availableLoggerDefFiles.isEmpty())
 		{
-			//handle missing settings
-			loggerDefExists = false;
+			if(getLoggerDefFilePath() == null || !new File(getLoggerDefFilePath()).exists())
+			{
+				for(File f : availableLoggerDefFiles.values())
+				{
+					if(f.getName().toUpperCase().contains("STD") && f.getName().toUpperCase().contains("EN")) //TODO ABSTRACT THIS and add to settings
+					{
+						setLoggerDefFilePath(f.getAbsolutePath());
+					}
+				}
+			}
+			if(getLoggerDefFilePath() == null || !new File(getLoggerDefFilePath()).exists())
+			{
+				loggerDefExists = false;
+			}
 		}
+		else
+			loggerDefExists = false;
 		
 		if(!new File(carsDefFilePath).exists())
 		{
@@ -803,32 +820,16 @@ public class Settings implements Serializable {
 		return carsDefFilePath;
 	}
 
-	public String getGitDefsUrl() {
-		return gitDefsUrl;
-	}
-
-	public void setGitDefsUrl(String gitDefsUrl) {
-		gitDefsUrl = gitDefsUrl;
-	}
-
-	public Vector<String> getGitAvailableBranches() {
-		return gitAvailableBranches;
-	}
-
-	public void setGitAvailableBranches(Vector<String> gitAvailableBranches) {
-		this.gitAvailableBranches = gitAvailableBranches;
-	}
-
-	public Map<File, String> getAvailableLoggerDefs() {
+	public Map<String,File> getAvailableLoggerDefs() {
 		return getAvailableLoggerDefFiles();
 	}
 
-	public Map<File, String> getAvailableLoggerDefFiles() {
+	public Map<String,File> getAvailableLoggerDefFiles() {
 		return availableLoggerDefFiles;
 	}
 
 	public void setAvailableLoggerDefFiles(
-			Map<File, String> availableLoggerDefs) {
+			Map<String,File> availableLoggerDefs) {
 		availableLoggerDefFiles = availableLoggerDefs;
 	}
 	
@@ -838,14 +839,51 @@ public class Settings implements Serializable {
 		{
 			if(availableLoggerDefFiles.containsValue(f.getName()) || useFullPath)
 			{
-				availableLoggerDefFiles.put(f, f.getAbsolutePath());
+				availableLoggerDefFiles.put(f.getAbsolutePath(),f);
 			}
 			else
-				getAvailableLoggerDefFiles().put(f,f.getName());
+				getAvailableLoggerDefFiles().put(f.getName(),f);
 		}
 	}
 
-	public void addGitAvailableBranch(String s) {
-		this.gitAvailableBranches.add(s);
+	public String getGitBranch() {
+		return gitCurrentBranch;
 	}
+
+	public void setGitBranch(String gitBranch) {
+		this.gitCurrentBranch = gitBranch;
+	}
+
+	public String getLoggerDefFilePath() {
+		return loggerDefFilePath;
+	}
+
+	public void setLoggerDefFilePath(String loggerDefFilePath) {
+		this.loggerDefFilePath = loggerDefFilePath;
+	}
+
+	public static String getGitDefsBaseDir() {
+		return gitDefsBaseDir;
+	}
+
+	public String getGitCurrentRemoteName() {
+		return gitCurrentRemote;
+	}
+	
+	public String getGitCurrentRemoteUrl() {
+		return gitRemotes.get(getGitCurrentRemoteName());
+	}
+
+	public Map<String,String> getGitRemotes() {
+		return gitRemotes;
+	}
+
+	public void setGitRemotes(Map<String,String> gitRemotes) {
+		this.gitRemotes = gitRemotes;
+	}
+	
+	public void addGitRemote(String url, String name) {
+		this.gitRemotes.put(name, url);
+	}
+
 }
