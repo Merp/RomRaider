@@ -236,9 +236,11 @@ public final class DynoControlPanel extends JPanel {
     private final JRadioButton iButton = new JRadioButton(IMPERIAL);
     private final JRadioButton mButton = new JRadioButton(METRIC);
     private final JCheckBox loadFileCB = new JCheckBox("Load From File");
+    private Settings settings;
 
     public DynoControlPanel(Component parent, DataRegistrationBroker broker, ECUEditor ecuEditor, DynoChartPanel chartPanel) {
         checkNotNull(parent, broker, chartPanel);
+        settings = ECUExec.settings;
         this.parent = parent;
         this.broker = broker;
         this.chartPanel = chartPanel;
@@ -1426,7 +1428,7 @@ public final class DynoControlPanel extends JPanel {
         try {
             File carDef = null;
             final String SEPARATOR = System.getProperty("file.separator");
-            final String loggerFilePath = Settings.getLoggerDefinitionFilePath();
+            final String loggerFilePath = ECUExec.settings.getLoggerDefFilePath();
             if (loggerFilePath != null) {
                 final int index = loggerFilePath.lastIndexOf(SEPARATOR);
                 if (index > 0) {
@@ -1435,7 +1437,7 @@ public final class DynoControlPanel extends JPanel {
                 }
             }
             if (!carDef.exists()) {
-                final String profileFilePath = Settings.getLoggerProfileFilePath();
+                final String profileFilePath = settings.getLoggerProfileFilePath();
                 if (profileFilePath != null) {
                     final int index = profileFilePath.lastIndexOf(SEPARATOR);
                     if (index > 0) {
