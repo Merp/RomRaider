@@ -73,7 +73,7 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
     private final JMenuItem updateDefinition = new JMenuItem("Get ECU Definitions...");
 
     private final JMenu editMenu = new JMenu("Edit");
-    private final JMenuItem settings = new JMenuItem(PRODUCT_NAME + " Settings...");
+    private final JMenuItem settingsMenuItem = new JMenuItem(PRODUCT_NAME + " Settings...");
     private final JMenuItem compareImages = new JMenuItem("Compare Images...");
 
     private final JMenu viewMenu = new JMenu("View");
@@ -133,8 +133,8 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
         // edit menu items
         add(editMenu);
         editMenu.setMnemonic('E');
-        editMenu.add(settings);
-        settings.addActionListener(this);
+        editMenu.add(settingsMenuItem);
+        settingsMenuItem.addActionListener(this);
         editMenu.add(compareImages);
         compareImages.addActionListener(this);
 
@@ -144,7 +144,7 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
         defManager.setMnemonic('D');
         //        editDefinition.setMnemonic('E');
         updateDefinition.setMnemonic('U');
-        settings.setMnemonic('S');
+        settingsMenuItem.setMnemonic('S');
         compareImages.setMnemonic('C');
         definitionMenu.add(defManager);
         //        definitionMenu.add(editDefinition);
@@ -301,7 +301,7 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
                         parent.getSettings().getSupportURL()), "Exception", ERROR_MESSAGE);
             }
 
-        } else if (e.getSource() == settings) {
+        } else if (e.getSource() == settingsMenuItem) {
             SettingsForm form = new SettingsForm(parent);
             form.setLocationRelativeTo(parent);
             form.setVisible(true);
