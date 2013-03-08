@@ -59,7 +59,7 @@ public class ECUExec {
     private static final String START_LOGGER_ARG = "-logger";
     private static final String START_LOGGER_FULLSCREEN_ARG = "-logger.fullscreen";
     public static Settings settings;
-    private static SettingsManager settingsManager;
+    public static SettingsManager settingsManager;
 	public static DefinitionRepoManager definitionRepoManager;
 	private static DefinitionManager definitionManager;
 	protected static Object lock;
