@@ -518,7 +518,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     }
 
     private void loadLoggerConfig() {
-        String loggerConfigFilePath = Settings.getLoggerDefinitionFilePath();
+        String loggerConfigFilePath = settings.getLoggerDefFilePath();
         if (isNullOrEmpty(loggerConfigFilePath)) showMissingConfigDialog();
         else {
             try {

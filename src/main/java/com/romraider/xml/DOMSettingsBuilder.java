@@ -285,7 +285,7 @@ public final class DOMSettingsBuilder {
 
         // definition path
         IIOMetadataNode definition = new IIOMetadataNode("definition");
-        definition.setAttribute("path", Settings.getLoggerDefinitionFilePath());
+        definition.setAttribute("path", settings.getLoggerDefFilePath());
         loggerSettings.appendChild(definition);
 
         // profile path
