@@ -21,8 +21,12 @@ package com.romraider.swing;
 
 import static com.romraider.Version.PRODUCT_NAME;
 import static java.io.File.separator;
+import static javax.swing.JOptionPane.INFORMATION_MESSAGE;
+import static javax.swing.JOptionPane.showMessageDialog;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -34,13 +38,16 @@ import javax.swing.ButtonGroup;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
+import javax.swing.BorderFactory;
 import javax.swing.JColorChooser;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
+import javax.swing.JWindow;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.border.TitledBorder;
 
@@ -49,6 +56,7 @@ import ZoeloeSoft.projects.JFontChooser.JFontChooser;
 import com.romraider.ECUExec;
 import com.romraider.Settings;
 import com.romraider.editor.ecu.ECUEditor;
+import com.romraider.logger.ecu.EcuLogger;
 import com.romraider.util.FileAssociator;
 import javax.swing.UIManager;
 import javax.swing.JComboBox;
@@ -62,21 +70,25 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.ComponentOrientation;
+import javax.swing.JScrollPane;
 
 public class SettingsForm extends JFrame implements MouseListener {
 
     private static final long serialVersionUID = 3910602424260147767L;
-    Settings settings;
-    ECUEditor parent;
+    Settings settings = ECUExec.settings;
+    ECUEditor parentEditor;
+    EcuLogger parentLogger;
 
     public static int MOVE_UP = 0;
     public static int MOVE_DOWN = 1;
-    private Vector<String> ecuDefFileNames = new Vector<String>();
+    private Vector<String> ecuDefFileNames = new Vector<String>();	
     
+    /**
+     * @wbp.parser.constructor
+     */
     public SettingsForm(ECUEditor parent) {
         this.setIconImage(parent.getIconImage());
-        this.parent = parent;
-        settings = parent.getSettings();
+        this.parentEditor = parent;
         initComponents();
         initSettings();
 
@@ -108,6 +120,42 @@ public class SettingsForm extends JFrame implements MouseListener {
         }
 
     }
+    
+    public SettingsForm(EcuLogger parent) {
+        this.setIconImage(parent.getIconImage());
+        this.parentLogger = parent;
+        initComponents();
+        initSettings();
+
+        maxColor.addMouseListener(this);
+        minColor.addMouseListener(this);
+        highlightColor.addMouseListener(this);
+        axisColor.addMouseListener(this);
+        increaseColor.addMouseListener(this);
+        decreaseColor.addMouseListener(this);
+        warningColor.addMouseListener(this);
+
+        btnOk.addMouseListener(this);
+        btnApply.addMouseListener(this);
+        btnCancel.addMouseListener(this);
+        btnChooseFont.addMouseListener(this);
+        reset.addMouseListener(this);
+        btnAddAssocs.addMouseListener(this);
+        btnRemoveAssocs.addMouseListener(this);
+
+        tableClickCount.setBackground(Color.WHITE);
+
+        // disable file association buttons if user is not in Windows
+        StringTokenizer osName = new StringTokenizer(System.getProperties().getProperty("os.name"));
+        if (!osName.nextToken().equalsIgnoreCase("windows")) {
+            btnAddAssocs.setEnabled(false);
+            btnRemoveAssocs.setEnabled(false);
+            extensionHex.setEnabled(false);
+            extensionBin.setEnabled(false);
+        }
+
+    }
+
 
     private void initSettings() {
 
@@ -439,73 +487,77 @@ public class SettingsForm extends JFrame implements MouseListener {
         JPanel panel_1 = new JPanel();
         panel_1.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Git Settings", TitledBorder.LEADING, TitledBorder.TOP, null, null));
         
-        JLabel lblRepositoryUrl = new JLabel("Repository URL:");
+        JLabel lblRepositoryUrl = new JLabel("Remote URL:");
         
-        textFieldGitRepo = new JTextField(settings.getGitDefsUrl());
+        textFieldGitRepo = new JTextField(settings.getGitCurrentRemoteUrl());
         textFieldGitRepo.setToolTipText("The percentage of the icons original size.");
         textFieldGitRepo.setColumns(10);
         
         JLabel lblBranch = new JLabel("Branch:");
         
-        JComboBox comboBoxGitBranch = new JComboBox(settings.getGitAvailableBranches());
+        comboBoxGitBranch = new JComboBox();
         comboBoxGitBranch.setEditable(true);
+        updateComboBoxGitBranch();
         
-        btnRefreshGitRepo = new JButton("Refresh Repo Status and Branches");
-        btnRefreshGitRepo.addMouseListener(new MouseAdapter() {
-        	@Override
-        	public void mouseClicked(MouseEvent e) {
-        		//TODO Refresh Repo and get branches
-        	}
-        });
+        btnAddRemote = new JButton("Add + Fetch Remote");
+        btnAddRemote.addMouseListener(this);
+
+        btnFetchResetGit = new JButton("Fetch + Checkout Branch");
+        btnFetchResetGit.addMouseListener(this);
         
-        btnFetchResetGit = new JButton("Fetch and Reset to Branch @ URL");
-        btnFetchResetGit.addMouseListener(new MouseAdapter() {
-        	@Override
-        	public void mouseClicked(MouseEvent e) {
-        		//TODO RESET
-        		
-        	}
-        });
+        lblRemoteName = new JLabel("Remote Name:");
+        
+        textFieldRemoteName = new JTextField(settings.getGitCurrentRemoteName());
+        textFieldRemoteName.setToolTipText("Enter a short name for this remote repository");
+        textFieldRemoteName.setColumns(10);
+       
+        
         GroupLayout gl_panel_1 = new GroupLayout(panel_1);
         gl_panel_1.setHorizontalGroup(
         	gl_panel_1.createParallelGroup(Alignment.LEADING)
-        		.addGroup(gl_panel_1.createSequentialGroup()
-        			.addGroup(gl_panel_1.createParallelGroup(Alignment.LEADING)
+        		.addGroup(Alignment.TRAILING, gl_panel_1.createSequentialGroup()
+        			.addContainerGap()
+        			.addGroup(gl_panel_1.createParallelGroup(Alignment.TRAILING)
+        				.addComponent(btnFetchResetGit)
         				.addGroup(gl_panel_1.createSequentialGroup()
-        					.addGap(30)
-        					.addGroup(gl_panel_1.createParallelGroup(Alignment.LEADING)
+        					.addGroup(gl_panel_1.createParallelGroup(Alignment.TRAILING)
+        						.addGroup(gl_panel_1.createSequentialGroup()
+        							.addComponent(lblRemoteName)
+        							.addGap(6))
         						.addGroup(gl_panel_1.createSequentialGroup()
         							.addComponent(lblBranch, GroupLayout.PREFERRED_SIZE, 43, GroupLayout.PREFERRED_SIZE)
-        							.addPreferredGap(ComponentPlacement.UNRELATED)
-        							.addComponent(comboBoxGitBranch, 0, 302, Short.MAX_VALUE))
+        							.addPreferredGap(ComponentPlacement.RELATED))
         						.addGroup(gl_panel_1.createSequentialGroup()
         							.addComponent(lblRepositoryUrl)
-        							.addPreferredGap(ComponentPlacement.RELATED)
-        							.addComponent(textFieldGitRepo, GroupLayout.DEFAULT_SIZE, 273, Short.MAX_VALUE))))
-        				.addGroup(Alignment.TRAILING, gl_panel_1.createSequentialGroup()
-        					.addContainerGap(296, Short.MAX_VALUE)
-        					.addComponent(btnRefreshGitRepo))
-        				.addGroup(Alignment.TRAILING, gl_panel_1.createSequentialGroup()
-        					.addContainerGap(296, Short.MAX_VALUE)
-        					.addComponent(btnFetchResetGit)))
-        			.addContainerGap())
+        							.addPreferredGap(ComponentPlacement.RELATED)))
+        					.addGroup(gl_panel_1.createParallelGroup(Alignment.TRAILING)
+        						.addComponent(textFieldGitRepo, GroupLayout.PREFERRED_SIZE, 300, GroupLayout.PREFERRED_SIZE)
+        						.addGroup(gl_panel_1.createParallelGroup(Alignment.TRAILING)
+        							.addComponent(comboBoxGitBranch, Alignment.LEADING, 0, 300, Short.MAX_VALUE)
+        							.addGroup(gl_panel_1.createSequentialGroup()
+        								.addComponent(textFieldRemoteName, GroupLayout.DEFAULT_SIZE, 157, Short.MAX_VALUE)
+        								.addPreferredGap(ComponentPlacement.RELATED)
+        								.addComponent(btnAddRemote))))))
+        			.addGap(285))
         );
         gl_panel_1.setVerticalGroup(
         	gl_panel_1.createParallelGroup(Alignment.LEADING)
         		.addGroup(gl_panel_1.createSequentialGroup()
-        			.addContainerGap()
         			.addGroup(gl_panel_1.createParallelGroup(Alignment.BASELINE)
-        				.addComponent(lblRepositoryUrl)
-        				.addComponent(textFieldGitRepo, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-        			.addGap(10)
-        			.addComponent(btnRefreshGitRepo)
+        				.addComponent(textFieldGitRepo, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+        				.addComponent(lblRepositoryUrl))
         			.addPreferredGap(ComponentPlacement.UNRELATED)
         			.addGroup(gl_panel_1.createParallelGroup(Alignment.BASELINE)
-        				.addComponent(lblBranch)
-        				.addComponent(comboBoxGitBranch, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+        				.addComponent(textFieldRemoteName, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+        				.addComponent(lblRemoteName)
+        				.addComponent(btnAddRemote))
+        			.addPreferredGap(ComponentPlacement.UNRELATED)
+        			.addGroup(gl_panel_1.createParallelGroup(Alignment.BASELINE)
+        				.addComponent(comboBoxGitBranch, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+        				.addComponent(lblBranch))
         			.addPreferredGap(ComponentPlacement.UNRELATED)
         			.addComponent(btnFetchResetGit)
-        			.addContainerGap(22, Short.MAX_VALUE))
+        			.addGap(57))
         );
         panel_1.setLayout(gl_panel_1);
         
@@ -548,33 +600,28 @@ public class SettingsForm extends JFrame implements MouseListener {
         });
         buttonEcuDefMoveDown.setText("Move Down");
         
-        ecuDefinitionList = new JList();
-        ecuDefinitionList.setLayoutOrientation(JList.HORIZONTAL_WRAP);
-        ecuDefinitionList.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-        ecuDefinitionList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        ecuDefinitionList.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
+        JScrollPane scrollPane = new JScrollPane();
         GroupLayout gl_panel_2 = new GroupLayout(panel_2);
         gl_panel_2.setHorizontalGroup(
-        	gl_panel_2.createParallelGroup(Alignment.LEADING)
-        		.addGroup(gl_panel_2.createSequentialGroup()
+        	gl_panel_2.createParallelGroup(Alignment.TRAILING)
+        		.addGroup(Alignment.LEADING, gl_panel_2.createSequentialGroup()
         			.addContainerGap()
         			.addGroup(gl_panel_2.createParallelGroup(Alignment.LEADING)
+        				.addComponent(scrollPane, Alignment.TRAILING, GroupLayout.DEFAULT_SIZE, 375, Short.MAX_VALUE)
         				.addGroup(gl_panel_2.createSequentialGroup()
         					.addComponent(buttonEcuDefMoveDown)
         					.addGap(6)
         					.addComponent(buttonEcuDefMoveUp)
-        					.addPreferredGap(ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+        					.addPreferredGap(ComponentPlacement.RELATED, 61, Short.MAX_VALUE)
         					.addComponent(buttonEcuDefAdd)
         					.addPreferredGap(ComponentPlacement.UNRELATED)
-        					.addComponent(buttonEcuDefRemove))
-        				.addComponent(ecuDefinitionList, GroupLayout.PREFERRED_SIZE, 375, GroupLayout.PREFERRED_SIZE))
+        					.addComponent(buttonEcuDefRemove)))
         			.addContainerGap())
         );
         gl_panel_2.setVerticalGroup(
         	gl_panel_2.createParallelGroup(Alignment.LEADING)
-        		.addGroup(gl_panel_2.createSequentialGroup()
-        			.addGap(16)
-        			.addComponent(ecuDefinitionList, GroupLayout.PREFERRED_SIZE, 144, GroupLayout.PREFERRED_SIZE)
+        		.addGroup(Alignment.TRAILING, gl_panel_2.createSequentialGroup()
+        			.addComponent(scrollPane, GroupLayout.DEFAULT_SIZE, 178, Short.MAX_VALUE)
         			.addPreferredGap(ComponentPlacement.RELATED)
         			.addGroup(gl_panel_2.createParallelGroup(Alignment.LEADING)
         				.addComponent(buttonEcuDefMoveDown)
@@ -582,8 +629,13 @@ public class SettingsForm extends JFrame implements MouseListener {
         				.addGroup(gl_panel_2.createParallelGroup(Alignment.BASELINE)
         					.addComponent(buttonEcuDefRemove)
         					.addComponent(buttonEcuDefAdd)))
-        			.addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        			.addGap(6))
         );
+        
+        ecuDefinitionList = new JList();
+        scrollPane.setViewportView(ecuDefinitionList);
+        ecuDefinitionList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        ecuDefinitionList.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
         panel_2.setLayout(gl_panel_2);
         
         panel = new JPanel();
@@ -591,24 +643,13 @@ public class SettingsForm extends JFrame implements MouseListener {
         
         lblFilepath = new JLabel("FilePath:");
         
-        comboBoxLoggerDef = new JComboBox(settings.getAvailableLoggerDefs().values().toArray());
+        comboBoxLoggerDef = new JComboBox(settings.getAvailableLoggerDefs().keySet().toArray());
+        comboBoxLoggerDef.setSelectedItem(new File(settings.getLoggerDefFilePath()).getName());
+        comboBoxLoggerDef.setSelectedItem(settings.getLoggerDefFilePath());
         comboBoxLoggerDef.setEditable(true);
         
-        btnLoggerDefChooseFile = new JButton("Choose File...");
-        btnLoggerDefChooseFile.addMouseListener(new MouseAdapter() {
-        	@Override
-        	public void mouseClicked(MouseEvent e) {
-        		AddLoggerDefFile();        		
-        	}
-        });
-        
-        jPanelDefs.addComponentListener(new ComponentAdapter() {
-        	@Override
-        	public void componentShown(ComponentEvent e) {
-        		//TODO Load all settings.
-        		return;
-        	}
-        });
+        btnLoggerDefChooseFile = new JButton("Choose External File...");
+        btnLoggerDefChooseFile.addMouseListener(this);
         
         GroupLayout gl_panel = new GroupLayout(panel);
         gl_panel.setHorizontalGroup(
@@ -641,18 +682,18 @@ public class SettingsForm extends JFrame implements MouseListener {
         		.addGroup(Alignment.TRAILING, gl_jPanelDefs.createSequentialGroup()
         			.addContainerGap()
         			.addGroup(gl_jPanelDefs.createParallelGroup(Alignment.TRAILING)
-        				.addComponent(panel, GroupLayout.PREFERRED_SIZE, 407, GroupLayout.PREFERRED_SIZE)
-        				.addComponent(panel_1, GroupLayout.PREFERRED_SIZE, 407, Short.MAX_VALUE)
-        				.addComponent(panel_2, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 407, Short.MAX_VALUE))
+        				.addComponent(panel_2, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 407, Short.MAX_VALUE)
+        				.addComponent(panel_1, Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 407, Short.MAX_VALUE)
+        				.addComponent(panel, GroupLayout.PREFERRED_SIZE, 407, GroupLayout.PREFERRED_SIZE))
         			.addContainerGap())
         );
         gl_jPanelDefs.setVerticalGroup(
         	gl_jPanelDefs.createParallelGroup(Alignment.TRAILING)
         		.addGroup(gl_jPanelDefs.createSequentialGroup()
         			.addContainerGap()
-        			.addComponent(panel_1, GroupLayout.PREFERRED_SIZE, 162, Short.MAX_VALUE)
+        			.addComponent(panel_1, GroupLayout.PREFERRED_SIZE, 145, GroupLayout.PREFERRED_SIZE)
         			.addPreferredGap(ComponentPlacement.RELATED)
-        			.addComponent(panel_2, GroupLayout.PREFERRED_SIZE, 219, GroupLayout.PREFERRED_SIZE)
+        			.addComponent(panel_2, GroupLayout.DEFAULT_SIZE, 236, Short.MAX_VALUE)
         			.addPreferredGap(ComponentPlacement.RELATED)
         			.addComponent(panel, GroupLayout.PREFERRED_SIZE, 99, GroupLayout.PREFERRED_SIZE)
         			.addContainerGap())
@@ -916,16 +957,25 @@ public class SettingsForm extends JFrame implements MouseListener {
 
         jPanelIcons.setLayout(jPanelIconsLayout);
     }
-    
+
+	
     public void AddLoggerDefFile() {
         JFileChooser fc = new JFileChooser(Settings.RR_LOGGER_REPO);
         fc.setFileFilter(new XMLFilter());
 
-        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-        	settings.addAvailableLoggerDefFile(fc.getSelectedFile(),true);
-        	DefaultComboBoxModel cmb  = new DefaultComboBoxModel(settings.getAvailableLoggerDefs().values().toArray());
-        	comboBoxLoggerDef.setModel(cmb);
-        	comboBoxLoggerDef.setSelectedItem(fc.getSelectedFile().getAbsolutePath());
+        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION && fc.getSelectedFile().getName().toLowerCase().contains(".xml")) {
+        	if(settings.getAvailableLoggerDefFiles().containsValue(fc.getSelectedFile()))
+        	{
+        		comboBoxLoggerDef.setSelectedItem(fc.getSelectedFile().getName());
+        	}
+        	else
+        	{
+	        	settings.addAvailableLoggerDefFile(fc.getSelectedFile(),true);
+	        	settings.setLoggerDefFilePath(settings.getAvailableLoggerDefFiles().get(fc.getSelectedFile().getName()).getAbsolutePath());//TODO abstract this?
+	        	DefaultComboBoxModel cmb  = new DefaultComboBoxModel(settings.getAvailableLoggerDefs().keySet().toArray());
+	        	comboBoxLoggerDef.setModel(cmb);
+	        	comboBoxLoggerDef.setSelectedItem(fc.getSelectedFile().getAbsolutePath());
+        	}
         }
     }
     
@@ -979,13 +1029,42 @@ public class SettingsForm extends JFrame implements MouseListener {
 
     public void updateEcuDefListModel() {
         ecuDefinitionList.setListData(ecuDefFileNames);
-
     }
+    
+    public void addGitRemoteAndFetch()
+    {
+    	if(settings.getGitRemotes().containsKey(this.textFieldRemoteName.getText()))
+    	{
+    		showMessageDialog(this,
+                    "A remote named " + this.textFieldRemoteName.getText() + " already exists!",
+                    "Git Config", INFORMATION_MESSAGE);
+    	}
+    	else if(settings.getGitRemotes().containsValue(this.textFieldGitRepo.getText()))
+    	{
+    		showMessageDialog(this,
+                    "A remote with URL " + this.textFieldGitRepo.getText() + " already exists!",
+                    "Git Config", INFORMATION_MESSAGE);
+    	}
+    	else
+    	{
+	    	setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+	    	if(this.textFieldGitRepo.getText() != null && this.textFieldRemoteName.getText() != null)
+	    		ECUExec.definitionRepoManager.AddRemote(this.textFieldRemoteName.getText(),this.textFieldGitRepo.getText());;
+	    	setCursor(null);
+    	}
+    }
+    
+    public void updateComboBoxGitBranch(){
+		DefaultComboBoxModel dcmb = new DefaultComboBoxModel(ECUExec.definitionRepoManager.getAvailableBranches());
+		this.comboBoxGitBranch.setModel(dcmb);
+		this.comboBoxGitBranch.setSelectedItem(settings.getGitBranch());
+	}
     
     @Override
     public void mouseClicked(MouseEvent e) {
         if (e.getSource() == maxColor) {
             Color color = JColorChooser.showDialog(this.getContentPane(),
+            		
                     "Background Color", settings.getMaxColor());
             if (color != null) {
                 maxColor.setBackground(color);
@@ -1069,6 +1148,15 @@ public class SettingsForm extends JFrame implements MouseListener {
                 FileAssociator.removeAssociation("BIN");
             }
 
+        } else if (e.getSource() == this.btnLoggerDefChooseFile){
+        	AddLoggerDefFile();  
+        } else if (e.getSource() == btnFetchResetGit){
+        	setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+    		ECUExec.definitionRepoManager.CheckoutBranch(comboBoxGitBranch.getSelectedItem().toString());
+    		setCursor(null);
+        } else if (e.getSource() == btnAddRemote){
+        	addGitRemoteAndFetch();
+        	updateComboBoxGitBranch();
         }
     }
 
@@ -1125,7 +1213,8 @@ public class SettingsForm extends JFrame implements MouseListener {
 
         try{
             settings.setEditorIconScale(Integer.parseInt(textFieldEditorIconScale.getText()));
-            parent.getToolBar().updateIcons();
+            if(parentEditor != null)
+            	parentEditor.getToolBar().updateIcons();
         } catch(NumberFormatException ex) {
             // Number formatted incorrectly reset.
             textFieldEditorIconScale.setText(String.valueOf(settings.getEditorIconScale()));
@@ -1133,17 +1222,39 @@ public class SettingsForm extends JFrame implements MouseListener {
 
         try{
             settings.setTableIconScale(Integer.parseInt(textFieldTableIconScale.getText()));
-            parent.getTableToolBar().updateIcons();
+            if(parentEditor != null)
+            	parentEditor.getTableToolBar().updateIcons();
         } catch(NumberFormatException ex) {
             // Number formatted incorrectly reset.
             textFieldTableIconScale.setText(String.valueOf(settings.getTableIconScale()));
+        }
+
+        Vector<File> output = new Vector<File>();
+        for (int i = 0; i < ecuDefFileNames.size(); i++) {
+            output.add(new File(ecuDefFileNames.get(i)));
+        }
+        settings.setEcuDefinitionFiles(output);
+        int index = 0;
+        String s = comboBoxLoggerDef.getSelectedItem().toString();
+        File f = settings.getAvailableLoggerDefs().get(s);
+        settings.setLoggerDefFilePath(f.getAbsolutePath());
+        
+        if(parentLogger != null)
+        {
+	        try{
+	            parentLogger.loadLoggerParams();
+	        } catch (Exception e) {
+	        	parentLogger.reportError(e);
+	    	}
         }
     }
 
     public void saveSettings()
     {
-        parent.getSettingsManager().save(settings);
+        ECUExec.settingsManager.save(settings);
     }
+    
+    
 
     @Override
     public void mousePressed(MouseEvent e) {
@@ -1223,7 +1334,10 @@ public class SettingsForm extends JFrame implements MouseListener {
     private JPanel panel;
     private JLabel lblFilepath;
     private JComboBox comboBoxLoggerDef;
-    private JButton btnRefreshGitRepo;
+    private JComboBox comboBoxGitBranch;
+    private JButton btnAddRemote;
     private JButton btnFetchResetGit;
     private JButton btnLoggerDefChooseFile;
+    private JLabel lblRemoteName;
+    private JTextField textFieldRemoteName;
 }
