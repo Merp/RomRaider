@@ -43,5 +43,10 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="lib/common/phidget21.jar"/>
+	<classpathentry kind="lib" path="lib/common/snakeyaml-1.11.jar" sourcepath="lib/common/snakeyaml-1.11-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/romraider/lib/common/snakeyaml-1.11-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>
