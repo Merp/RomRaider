@@ -43,8 +43,11 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="lib/common/phidget21.jar"/>
-	<classpathentry kind="lib" path="lib/common/org.eclipse.jgit-2.1.0.201209190230-r.jar" sourcepath="C:/Users/Merrill/.m2/repository/org/eclipse/jgit/org.eclipse.jgit/2.1.0.201209190230-r/org.eclipse.jgit-2.1.0.201209190230-r-sources.jar"/>
-	<classpathentry kind="lib" path="lib/common/org.eclipse.jgit-2.1.0.201209190230-r-javadoc.jar"/>
+	<classpathentry kind="lib" path="lib/common/org.eclipse.jgit-2.1.0.201209190230-r.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/romraider/lib/common/org.eclipse.jgit-2.1.0.201209190230-r-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="lib/common/jsch-0.1.49.jar"/>
 	<classpathentry kind="lib" path="lib/common/snakeyaml-1.11.jar" sourcepath="lib/common/snakeyaml-1.11-sources.jar">
 		<attributes>
