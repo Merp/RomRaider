@@ -645,7 +645,6 @@ public class SettingsForm extends JFrame implements MouseListener {
         
         comboBoxLoggerDef = new JComboBox(settings.getAvailableLoggerDefs().keySet().toArray());
         comboBoxLoggerDef.setSelectedItem(new File(settings.getLoggerDefFilePath()).getName());
-        comboBoxLoggerDef.setSelectedItem(settings.getLoggerDefFilePath());
         comboBoxLoggerDef.setEditable(true);
         
         btnLoggerDefChooseFile = new JButton("Choose External File...");
