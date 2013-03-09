@@ -755,7 +755,11 @@ public class Settings implements Serializable {
 			}
 			if(getLoggerDefFilePath() == null || !new File(getLoggerDefFilePath()).exists())
 			{
+				try{
+					setLoggerDefFilePath(availableLoggerDefFiles.values().iterator().next().getAbsolutePath());
+				} catch (Exception e){
 				loggerDefExists = false;
+				}
 			}
 		}
 		else
