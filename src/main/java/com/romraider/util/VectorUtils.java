@@ -26,7 +26,7 @@ public class VectorUtils {
 		Vector<File> ret = new Vector<File>();
 		for(File f : files)
 		{
-			if(f.getName().toUpperCase().contains(filter.toUpperCase()))
+			if(f.getAbsolutePath().toUpperCase().contains(filter.toUpperCase()))
 			{
 				ret.add(f);
 			}

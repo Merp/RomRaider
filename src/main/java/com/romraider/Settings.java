@@ -133,6 +133,10 @@ public class Settings implements Serializable {
     public long definitionDirDate = 0;
     public static File definitionDir = new File(HOME + "/.RomRaider");
     private Vector<File> ecuDefinitionFiles = new Vector<File>();
+    
+    private static final String DEFAULT_STD_ECU_DEF = "standard\\ecu_defs.xml";
+    private static final String DEFAULT_METRIC_ECU_DEF = "metric\\ecu_defs.xml";
+    private static final String DEFAULT_LOGGER_DEF = "logger_STD_EN";
 
 	private String carsDefFilePath = RR_CARS_REPO + "cars_def.xml";
 	
@@ -212,6 +216,14 @@ public class Settings implements Serializable {
     public void addEcuDefinitionFile(File ecuDefinitionFile) {
     	if(!ecuDefinitionFiles.contains(ecuDefinitionFile))
         ecuDefinitionFiles.add(ecuDefinitionFile);
+    }
+    
+    public void addEcuDefinitionFileFirst(File ecuDefinitionFile) {
+    	if(ecuDefinitionFile.exists()){
+	    	if(ecuDefinitionFiles.contains(ecuDefinitionFile))
+	    		ecuDefinitionFiles.remove(ecuDefinitionFile);
+	    	ecuDefinitionFiles.add(0,ecuDefinitionFile);
+    	}
     }
 
     public void setEcuDefinitionFiles(Vector<File> ecuDefinitionFiles) {
@@ -714,8 +726,7 @@ public class Settings implements Serializable {
         }
     }
 
-	public boolean CheckEcuDefs()
-	{
+	public boolean CheckEcuDefs(){
 		for(File f : VectorUtils.FilterCI(VectorUtils.Walk(RRECUDEFREPO),".xml"))
 			addEcuDefinitionFile(f);
 		if(ecuDefinitionFiles != null && !ecuDefinitionFiles.isEmpty())
@@ -741,21 +752,37 @@ public class Settings implements Serializable {
 		return ecuDefExists;
 	}
 	
+	public void SetDefaultDefs(){
+		SetDefaultEcuDefs();
+		SetDefaultLoggerDefs();
+	}
+
+	public void SetDefaultEcuDefs(){
+		for(File f : VectorUtils.FilterCI(VectorUtils.Walk(RRECUDEFREPO),".xml"))
+			addEcuDefinitionFile(f);
+		for(File f : VectorUtils.FilterCI(VectorUtils.Walk(RRECUDEFREPO),DEFAULT_METRIC_ECU_DEF))
+			addEcuDefinitionFileFirst(f);
+		for(File f : VectorUtils.FilterCI(VectorUtils.Walk(RRECUDEFREPO),DEFAULT_STD_ECU_DEF))
+			addEcuDefinitionFileFirst(f);
+	}
+	
+	public void SetDefaultLoggerDefs(){
+		if(!availableLoggerDefFiles.isEmpty()){
+			if(getLoggerDefFilePath() == null || !new File(getLoggerDefFilePath()).exists()){
+				for(File f : availableLoggerDefFiles.values()){
+					if(f.getName().toUpperCase().contains(DEFAULT_LOGGER_DEF.toUpperCase())){
+						setLoggerDefFilePath(f.getAbsolutePath());
+					}
+				}
+			}
+		}
+	}
+	
 	public boolean CheckLoggerDefs(){
 		for(File f : VectorUtils.FilterCI(VectorUtils.Walk(RR_LOGGER_REPO),".xml"))
 			addAvailableLoggerDefFile(f,false);
 		if(!availableLoggerDefFiles.isEmpty())
 		{
-			if(getLoggerDefFilePath() == null || !new File(getLoggerDefFilePath()).exists())
-			{
-				for(File f : availableLoggerDefFiles.values())
-				{
-					if(f.getName().toUpperCase().contains("STD") && f.getName().toUpperCase().contains("EN")) //TODO ABSTRACT THIS and add to settings
-					{
-						setLoggerDefFilePath(f.getAbsolutePath());
-					}
-				}
-			}
 			if(getLoggerDefFilePath() == null || !new File(getLoggerDefFilePath()).exists())
 			{
 				try{
@@ -876,6 +903,16 @@ public class Settings implements Serializable {
 	
 	public void addGitRemote(String url, String name) {
 		this.gitRemotes.put(name, url);
+	}
+
+	public boolean CheckDefs() {
+		if(!CheckEcuDefs()){
+			SetDefaultEcuDefs();
+		}
+		if(!CheckLoggerDefs()){
+			SetDefaultLoggerDefs();
+		}
+		return (CheckCarDefs() && CheckEcuDefs() && CheckLoggerDefs());
 	}
 
 }
