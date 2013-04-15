@@ -64,6 +64,7 @@ public final class DefinitionRepoManager extends AbstractFrame{
         		LOGGER.info("No definition git repo found, downloading.");
 	        	UpdateStatus("Downloading Definition Repo...",50);
 	        	DownloadRepo();
+	        	settings.SetDefaultDefs();
 	        }
 	        else{
 	        	LOGGER.info("Definition git repo found, updating.");
@@ -185,7 +186,7 @@ public final class DefinitionRepoManager extends AbstractFrame{
 
 	public void gitClone(String url, String remote, String path, String checkoutBranch) throws IOException{
 		try {
-			LOGGER.debug("Cloning git repo " + remote + " at " + url);
+			LOGGER.info("Cloning git repo " + remote + " at " + url);
 			delDir(new File(path));
 			git = Git.cloneRepository()
 					.setRemote(remote)
@@ -204,7 +205,7 @@ public final class DefinitionRepoManager extends AbstractFrame{
 	
 	private void FetchAll()
 	{
-		LOGGER.debug("Fetching all git remotes");
+		LOGGER.info("Fetching all git remotes");
 		List<Ref> bl;
 		try {
 			bl = git.branchList().setListMode(ListMode.REMOTE).call();
@@ -227,7 +228,7 @@ public final class DefinitionRepoManager extends AbstractFrame{
 	
 	private void UpdateAllBranches(String url, String checkoutBranch) throws GitAPIException
 	{
-		LOGGER.debug("Updating all git branches from remote at " + url);
+		LOGGER.info("Updating all git branches from remote at " + url);
 		List<Ref> bl = git.branchList().setListMode(ListMode.REMOTE).call();
 		
 		for(Ref r : bl)
@@ -244,7 +245,7 @@ public final class DefinitionRepoManager extends AbstractFrame{
 	
 	private void UpdateBranch(Ref r) throws RefAlreadyExistsException, RefNotFoundException, InvalidRefNameException, GitAPIException
 	{
-		LOGGER.debug("Updating git branch " + r);
+		LOGGER.info("Updating git branch " + r);
 		String sbranch = Repository.shortenRefName(r.getName());
 		git.branchCreate()
 		.setForce(true)
@@ -256,18 +257,19 @@ public final class DefinitionRepoManager extends AbstractFrame{
 	}
 
 	public void CheckoutBranch(String s) {
-		LOGGER.debug("Checking out git branch " + s);
+		LOGGER.info("Checking out git branch " + s);
 		git = new Git(gitRepo);
 		try {
 			git.checkout().setName(s).setUpstreamMode(SetupUpstreamMode.TRACK).call();
 			settings.setGitBranch(s);
+			settings.CheckDefs();
 		} catch (GitAPIException e) {
 			LOGGER.error("Error checking out definition git repo branch " + s + ": " + e.getMessage());
 		}
 	}
 	
 	public static void gitClone(String url, String path, List<String> branches) throws IOException, InvalidRemoteException, TransportException, GitAPIException{
-		LOGGER.debug("Cloning git repository at " + url + " to path " + path );
+		LOGGER.info("Cloning git repository at " + url + " to path " + path );
 		Git.cloneRepository()
 			.setURI(url)
 			.setDirectory(new File(path + "/"))
@@ -278,7 +280,7 @@ public final class DefinitionRepoManager extends AbstractFrame{
 	}
 
 	public static Repository initRepo(String path) throws IOException{
-		LOGGER.debug("Initializing repository at path " + path);
+		LOGGER.info("Initializing repository at path " + path);
 		FileRepositoryBuilder builder = new FileRepositoryBuilder();
 		Repository repository = null;
 		repository = builder.setGitDir(new File(path + "/.git"))
