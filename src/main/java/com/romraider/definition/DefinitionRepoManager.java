@@ -13,7 +13,6 @@ import java.awt.HeadlessException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Vector;
 
@@ -25,10 +24,8 @@ import javax.swing.JWindow;
 
 import org.eclipse.jgit.api.CreateBranchCommand;
 import org.eclipse.jgit.api.CreateBranchCommand.SetupUpstreamMode;
-import org.eclipse.jgit.api.FetchCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand.ListMode;
-import org.eclipse.jgit.api.LsRemoteCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRefNameException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
@@ -39,8 +36,6 @@ import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.eclipse.jgit.transport.RefSpec;
-
 import com.centerkey.utils.BareBonesBrowserLaunch;
 import com.romraider.ECUExec;
 import com.romraider.Settings;
@@ -110,61 +105,6 @@ public final class DefinitionRepoManager extends AbstractFrame{
         }
 	}
 
-	
-//	public void Run(){
-//
-//    	parentEditor.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-//    	parentEditor.statusPanel.update("Checking Definition Repo Status...",10);
-//    	
-//        try{
-//        	if(!InitAndCheckRepoExists())
-//	        {
-//	        	parentEditor.statusPanel.update("Downloading Definition Repo...",50);
-//	        	DownloadRepo();
-//	        }
-//	        else
-//	        {
-//	        	parentEditor.statusPanel.update("Updating Definition Repo...",75);
-//	        	UpdateDefRepo();
-//	        }
-//        	showMessageDialog(parentEditor,
-//                    "Definition repository successfully configured! ECU definition file(s) must be selected before ROM images can be opened.\nMenu: ECU Definitions > ECU Definition Manager...",
-//                    "Editor Configuration",
-//                    INFORMATION_MESSAGE);
-//        	
-//	        parentEditor.statusPanel.update("Ready...",0);
-//	        parentEditor.setCursor(null);
-//	       
-//        }catch(Exception e){
-//        	showMessageDialog(parentEditor,
-//                    "Error configuring definition repository, configure definitions manually!\nError: " + e.getMessage(),
-//                    "Definition repository configuration failed.",
-//                    INFORMATION_MESSAGE);
-//        	if (parentEditor.getSettings().getEcuDefinitionFiles().size() <= 0) {
-//                // no ECU definitions configured - let user choose to get latest or configure later
-//                Object[] options = {"Yes", "No"};
-//                int answer = showOptionDialog(null,
-//                        "Unable to configure ECU definition repository.\nGo online to download the latest definition files?",
-//                        "Editor Configuration",
-//                        DEFAULT_OPTION,
-//                        WARNING_MESSAGE,
-//                        null,
-//                        options,
-//                        options[0]);
-//                if (answer == 0) {
-//                    BareBonesBrowserLaunch.openURL(ECU_DEFS_URL);
-//                } else {
-//                    showMessageDialog(parentEditor,
-//                            "ECU definition files need to be configured before ROM images can be opened.\nMenu: ECU Definitions > ECU Definition Manager...",
-//                            "Editor Configuration",
-//                            INFORMATION_MESSAGE);
-//                }
-//    	        
-//            }
-//        }
-//	}
-//	
-	
 	/**
 	 * Checks that we have a git repo containing our desired branch
 	 * @return
@@ -205,32 +145,12 @@ public final class DefinitionRepoManager extends AbstractFrame{
 	
 	public void UpdateDefRepo(String remote, String branch) {
 		try {
-			//Basically, fetch all, and checkout.
 			git.fetch()
 				.setRemote(remote)
 				.setRemoveDeletedRefs(true)
 				.call();
 			
 			this.UpdateAllBranches(ECUExec.settings.getGitRemotes().get(remote), branch);
-			
-//			if(!gitCompareToRemote(remote, gitBranch, gitRepo)){
-//
-//			    Object[] options = {"Do it. Do it.","Maybe Later"};
-//			    int answer = showOptionDialog(null,
-//			            "ECU definition repository branch" + gitBranch + " is out of date\n Would you like to update it??",
-//			            "Editor Configuration",
-//			            DEFAULT_OPTION,
-//			            WARNING_MESSAGE,
-//			            null,
-//			            options,
-//			            options[0]);
-//			    if (answer == 0) {
-//			    	
-//			    	File tempFile = new File(Settings.getGitDefsBaseDir());
-//			    	delete(tempFile); //TODO: is this necessary??
-//			    	UpdateBranch(gitRepo.getRef(gitBranch));
-//			    }
-//			}
 		} catch (HeadlessException | GitAPIException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -246,10 +166,10 @@ public final class DefinitionRepoManager extends AbstractFrame{
 					.setRemote(remote)
 					.setURI(url)
 					.setDirectory(new File(path + "/"))
-					//.setCloneAllBranches(true)
-					//.setTimeout(10000)
+					.setCloneAllBranches(true)
+					.setTimeout(10000)
 					.call();
-			FetchAll();//UpdateAllBranches(url, checkoutBranch);
+			FetchAll();
 			
 		} catch (GitAPIException e) {
 			// TODO Auto-generated catch block
@@ -302,7 +222,7 @@ public final class DefinitionRepoManager extends AbstractFrame{
 		.setForce(true)
 		.setName(sbranch)
         .setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)
-        .setStartPoint(sbranch)//"origin/" + branch)
+        .setStartPoint(sbranch)
         .call();
 		settings.setGitBranch(sbranch);
 	}
@@ -327,32 +247,13 @@ public final class DefinitionRepoManager extends AbstractFrame{
 			.call();
 		gitRepo = initRepo(path);
 	}
-	
-//	public static boolean gitCompareToRemote(String remote, String branch, Repository repo) throws IOException, InvalidRemoteException, TransportException, GitAPIException{
-//			LsRemoteCommand lsrc = new LsRemoteCommand(repo);
-//			lsrc.setHeads(true);
-//			lsrc.setTags(true);
-//			lsrc.setRemote(ECUExec.settings.getGitRemotes().get(remote));
-//			Collection<Ref> derp = lsrc.call();
-//			for(Ref ref : derp){
-//				String remRef = Repository.shortenRefName(ref.getName());
-//				String loRef = Repository.shortenRefName(repo.getRef(branch));
-//				Ref reff = repo.getRef(branch);
-//				if(
-//					if(reff.getObjectId().equals(ref.getObjectId())) {
-//					return true;
-//					}
-//				}
-//			}
-//			return false;
-//	}
 
 	public static Repository initRepo(String path) throws IOException{
 		FileRepositoryBuilder builder = new FileRepositoryBuilder();
 		Repository repository = null;
 		repository = builder.setGitDir(new File(path + "/.git"))
-		  .readEnvironment() // scan environment GIT_* variables
-		  .findGitDir() // scan up the file system tree
+		  .readEnvironment()
+		  .findGitDir() 
 		  .build();
 		return repository;
 	}
@@ -381,43 +282,6 @@ public final class DefinitionRepoManager extends AbstractFrame{
 	        }
 	    }
 	    return(directory.delete());
-	}
-	
-	public static void delete(File td){
-		if(td.isDirectory()){
-	    	//directory is empty, then delete it
-			if(td.list().length==0){
-	
-			   td.delete();
-			   System.out.println("Directory is deleted : " 
-	                                             + td.getAbsolutePath());
-	
-			}else{
-	
-			   //list all the directory contents
-	    	   String files[] = td.list();
-	
-	    	   for (String temp : files) {
-	    	      //construct the file structure
-	    	      File fileDelete = new File(td, temp);
-	
-	    	      //recursive delete
-	    	     delete(fileDelete);
-	    	   }
-	
-	    	   //check the directory again, if empty then delete it
-	    	   if(td.list().length==0){
-	       	     td.delete();
-	    	     System.out.println("Directory is deleted : " 
-	                                              + td.getAbsolutePath());
-	    	   }
-			}
-		}
-		else{
-			//if file, then delete it
-			td.delete();
-			System.out.println("File is deleted : " + td.getAbsolutePath());
-		}
 	}
 	
 	public void UpdateStatus(String s, int i){
@@ -496,14 +360,12 @@ public final class DefinitionRepoManager extends AbstractFrame{
 
 	public void AddRemote(String name, String url) {
 		StoredConfig config = git.getRepository().getConfig();
-		ArrayList<String> tsl = new ArrayList<String>();
 		config.setString("remote", name, "url",url);
 		config.setString("remote",name, "fetch", "+refs/heads/*:refs/remotes/" + name + "/*");
 		try {
 			config.save();
-			this.initRepo(settings.getGitDefsBaseDir());
+			DefinitionRepoManager.initRepo(Settings.getGitDefsBaseDir());
 			git.init().call();
-			//TODO SET GIT REMOTE??
 			git.fetch().setRemote(name).call();
 			settings.addGitRemote(url, name);
 		} catch (IOException | GitAPIException e) {
