@@ -21,7 +21,6 @@ package com.romraider.swing;
 
 import static com.romraider.Version.ABOUT_ICON;
 import static com.romraider.Version.BUILDNUMBER;
-import static com.romraider.Version.ECU_DEFS_URL;
 import static com.romraider.Version.PRODUCT_NAME;
 import static com.romraider.Version.SUPPORT_URL;
 import static com.romraider.Version.VERSION;
@@ -48,7 +47,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JSeparator;
 
-import com.centerkey.utils.BareBonesBrowserLaunch;
 import com.romraider.editor.ecu.ECUEditor;
 import com.romraider.maps.Rom;
 import com.romraider.maps.Table;
@@ -66,11 +64,6 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
     private final JMenuItem closeImage = new JMenuItem("Close Image");
     private final JMenuItem closeAll = new JMenuItem("Close All Images");
     private final JMenuItem exit = new JMenuItem("Exit");
-
-    private final JMenu definitionMenu = new JMenu("ECU Definitions");
-    private final JMenuItem defManager = new JMenuItem("ECU Definition Manager...");
-    //    private JMenuItem editDefinition = new JMenuItem("Edit ECU Definitions...");
-    private final JMenuItem updateDefinition = new JMenuItem("Get ECU Definitions...");
 
     private final JMenu editMenu = new JMenu("Edit");
     private final JMenuItem settingsMenuItem = new JMenuItem(PRODUCT_NAME + " Settings...");
@@ -138,20 +131,8 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
         editMenu.add(compareImages);
         compareImages.addActionListener(this);
 
-        // ecu def menu items
-        add(definitionMenu);
-        definitionMenu.setMnemonic('D');
-        defManager.setMnemonic('D');
-        //        editDefinition.setMnemonic('E');
-        updateDefinition.setMnemonic('U');
         settingsMenuItem.setMnemonic('S');
         compareImages.setMnemonic('C');
-        definitionMenu.add(defManager);
-        //        definitionMenu.add(editDefinition);
-        definitionMenu.add(updateDefinition);
-        defManager.addActionListener(this);
-        //        editDefinition.addActionListener(this);
-        updateDefinition.addActionListener(this);
 
         // view menu items
         add(viewMenu);
@@ -311,11 +292,6 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
             form.setLocationRelativeTo(parent);
             form.setVisible(true);
 
-        } else if (e.getSource() == defManager) {
-            DefinitionManager form = new DefinitionManager();
-            form.setLocationRelativeTo(parent);
-            form.setVisible(true);
-
         } else if (e.getSource() == level1) {
             parent.setUserLevel(1);
 
@@ -333,9 +309,6 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
 
         } else if (e.getSource() == openLogger) {
             parent.launchLogger();
-        } else if (e.getSource() == updateDefinition) {
-            BareBonesBrowserLaunch.openURL(ECU_DEFS_URL);
-
         } else if (e.getSource() == launchRamTuneTestApp) {
             RamTuneTestApp.startTestApp(DISPOSE_ON_CLOSE);
 
