@@ -23,8 +23,6 @@ import com.romraider.ECUExec;
 import com.romraider.Settings;
 import com.romraider.swing.LookAndFeelManager;
 import com.romraider.util.LogManager;
-import com.romraider.util.SettingsManager;
-import com.romraider.util.SettingsManagerImpl;
 import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
 
 public final class EcuLoggerExec {

@@ -19,15 +19,11 @@
 
 package com.romraider.editor.ecu;
 
-import static com.romraider.Version.ECU_DEFS_URL;
 import static com.romraider.Version.PRODUCT_NAME;
 import static com.romraider.Version.VERSION;
-import static javax.swing.JOptionPane.DEFAULT_OPTION;
 import static javax.swing.JOptionPane.ERROR_MESSAGE;
 import static javax.swing.JOptionPane.INFORMATION_MESSAGE;
-import static javax.swing.JOptionPane.WARNING_MESSAGE;
 import static javax.swing.JOptionPane.showMessageDialog;
-import static javax.swing.JOptionPane.showOptionDialog;
 import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED;
 import static javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER;
 import static javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS;
@@ -40,12 +36,9 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
-import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.beans.PropertyChangeEvent;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -65,14 +58,10 @@ import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
 import javax.swing.tree.TreePath;
 
-import org.eclipse.jgit.lib.BatchingProgressMonitor;
-import org.eclipse.jgit.lib.NullProgressMonitor;
-import org.eclipse.jgit.lib.ThreadSafeProgressMonitor;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXParseException;
 
-import com.centerkey.utils.BareBonesBrowserLaunch;
 import com.romraider.ECUExec;
 import com.romraider.Settings;
 import com.romraider.definition.DefinitionRepoManager;
@@ -83,7 +72,6 @@ import com.romraider.maps.Table;
 import com.romraider.net.URL;
 import com.romraider.swing.AbstractFrame;
 import com.romraider.swing.CustomToolbarLayout;
-import com.romraider.swing.DefinitionManager;
 import com.romraider.swing.ECUEditorMenuBar;
 import com.romraider.swing.ECUEditorToolBar;
 import com.romraider.swing.JProgressPane;
@@ -122,7 +110,6 @@ public class ECUEditor extends AbstractFrame {
     private SetUserLevelWorker setUserLevelWorker;
     private LaunchLoggerWorker launchLoggerWorker;
     private final ImageIcon editorIcon = new ImageIcon(getClass().getResource("/graphics/romraider-ico.gif"), "RomRaider ECU Editor");
-    private DefinitionManager definitionManager = new DefinitionManager();
 	private DefinitionRepoManager definitionRepoManager = ECUExec.definitionRepoManager;
 	
     public ECUEditor() {
