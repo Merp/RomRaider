@@ -41,7 +41,7 @@ public final class ResetManagerImpl implements ResetManager {
         String target = "ECU";
         try {
             LoggerConnection connection = getConnection(Settings.getLoggerProtocol(), settings.getLoggerPort(),
-                    settings.getLoggerConnectionProperties());
+                    settings.GetLoggerConnectionProperties());
             try {
                 if (Settings.getDestinationId() == 0x18) target = "TCU";
                 messageListener.reportMessage("Sending " + target + " Reset...");

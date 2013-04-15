@@ -11,7 +11,17 @@ import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.SequenceNode;
 import org.yaml.snakeyaml.nodes.Tag;
+import org.yaml.snakeyaml.representer.Represent;
 import org.yaml.snakeyaml.representer.Representer;
+
+import com.romraider.io.connection.ConnectionProperties;
+import com.romraider.io.connection.ConnectionPropertiesImpl;
+import com.romraider.logger.ecu.definition.EcuDefinition;
+import com.romraider.logger.ecu.definition.EcuDefinitionImpl;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Skips empty and null values and prevents stack overflow caused by recursion
@@ -25,6 +35,7 @@ public class SkipEmptyRepresenterAwtSafe extends Representer {
 
 	public SkipEmptyRepresenterAwtSafe() {
 		super();
+		this.representers.put(File.class, (Represent) new FileRepresenter());
 	}
 
 	@Override
@@ -35,12 +46,13 @@ public class SkipEmptyRepresenterAwtSafe extends Representer {
         }
 		if(javaBean instanceof Dimension && "size".equals(property.getName().toLowerCase())){
 			return null;
-		}
+		};
+		Node valueNode;
 		NodeTuple tuple = null;
         tuple = super.representJavaBeanProperty(javaBean, property, propertyValue, customTag);
-        Node valueNode = tuple.getValueNode();
+        valueNode = tuple.getValueNode();
         
-        if (Tag.NULL.equals(valueNode.getTag())) {
+		if (Tag.NULL.equals(valueNode.getTag())) {
             return null;// skip 'null' values
         }
         if (valueNode instanceof CollectionNode) {
@@ -59,4 +71,15 @@ public class SkipEmptyRepresenterAwtSafe extends Representer {
         }
         return tuple;
     }
+	
+	
+
+public class FileRepresenter implements Represent {
+    public Node representData(Object data) {
+        File file = (File) data;
+        Node scalar = representScalar(new Tag("!!java.io.File"), file.getAbsolutePath());
+        return scalar;
+    }
+}
+
 }

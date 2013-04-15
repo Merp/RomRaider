@@ -175,7 +175,7 @@ public final class QueryManagerImpl implements QueryManager {
             LoggerConnection connection =
                     getConnection(Settings.getLoggerProtocol(),
                                   settings.getLoggerPort(),
-                                  settings.getLoggerConnectionProperties());
+                                  settings.GetLoggerConnectionProperties());
             try {
                 messageListener.reportMessage("Sending " + target + " Init...");
                 connection.ecuInit(ecuInitCallback, id);

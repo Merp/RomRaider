@@ -485,19 +485,19 @@ public class Settings implements Serializable {
         this.fileLoggingAbsoluteTimestamp = fileLoggingAbsoluteTimestamp;
     }
 
-    public ConnectionProperties getLoggerConnectionProperties() {
+    public ConnectionProperties GetLoggerConnectionProperties() {
         return loggerConnectionProperties;
     }
 
-    public void setLoggerConnectionProperties(ConnectionProperties loggerConnectionProperties) {
+    public void SetLoggerConnectionProperties(ConnectionProperties loggerConnectionProperties) {
         this.loggerConnectionProperties = loggerConnectionProperties;
     }
 
-    public Map<String, EcuDefinition> getLoggerEcuDefinitionMap() {
+    public Map<String, EcuDefinition> GetLoggerEcuDefinitionMap() {
         return loggerEcuDefinitionMap;
     }
 
-    public void setLoggerEcuDefinitionMap(Map<String, EcuDefinition> loggerEcuDefinitionMap) {
+    public void SetLoggerEcuDefinitionMap(Map<String, EcuDefinition> loggerEcuDefinitionMap) {
         this.loggerEcuDefinitionMap = loggerEcuDefinitionMap;
     }
 

@@ -370,14 +370,14 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
                         }
 
                         private String getCalId(String ecuId) {
-                            Map<String, EcuDefinition> ecuDefinitionMap = settings.getLoggerEcuDefinitionMap();
+                            Map<String, EcuDefinition> ecuDefinitionMap = settings.GetLoggerEcuDefinitionMap();
                             if (ecuDefinitionMap == null) return null;
                             EcuDefinition def = ecuDefinitionMap.get(ecuId);
                             return def == null ? null : def.getCalId();
                         }
 
                         private String getCarString(String ecuId) {
-                            Map<String, EcuDefinition> ecuDefinitionMap = settings.getLoggerEcuDefinitionMap();
+                            Map<String, EcuDefinition> ecuDefinitionMap = settings.GetLoggerEcuDefinitionMap();
                             if (ecuDefinitionMap == null) return null;
                             EcuDefinition def = ecuDefinitionMap.get(ecuId);
                             return def == null ? null : def.getCarString();
@@ -498,7 +498,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
                     ecuDefinitionMap.putAll(dataLoader.getEcuDefinitionMap());
                 }
             }
-            settings.setLoggerEcuDefinitionMap(ecuDefinitionMap);
+            settings.SetLoggerEcuDefinitionMap(ecuDefinitionMap);
             LOGGER.info(
                 String.format(
                     "%d ECU definitions loaded from %d files",
@@ -523,7 +523,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
                 loadEcuParams(ecuParams);
                 loadEcuSwitches(dataLoader.getEcuSwitches());
                 if (target.equals("ECU")) initFileLoggingController(dataLoader.getFileLoggingControllerSwitch());
-                settings.setLoggerConnectionProperties(dataLoader.getConnectionProperties());
+                settings.SetLoggerConnectionProperties(dataLoader.getConnectionProperties());
                 if (dataLoader.getDefVersion() == null) {
                     defVersion = "na";
                 }
