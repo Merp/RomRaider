@@ -38,6 +38,7 @@ import java.util.Vector;
 
 import com.romraider.io.connection.ConnectionProperties;
 import com.romraider.logger.ecu.definition.EcuDefinition;
+import com.romraider.util.VectorUtils;
 
 public class Settings implements Serializable {
 
@@ -121,9 +122,9 @@ public class Settings implements Serializable {
 
 	
 	private String gitCurrentRemote;
-	private Map<String,String> gitRemotes = new HashMap<String,String>(); //TODO make these persistent
+	private Map<String,String> gitRemotes = new HashMap<String,String>();
 
-	private String gitCurrentBranch = "/refs/remotes/romraider/Alpha"; //TODO make this persistent
+	private String gitCurrentBranch = "/refs/remotes/romraider/Alpha";
 	
     public static final String RRECUDEFREPO = HOME + "/.RomRaider/SubaruDefs/RomRaider/ecu/";
     public static final String RR_LOGGER_REPO = HOME + "/.RomRaider/SubaruDefs/RomRaider/logger/";
@@ -143,7 +144,7 @@ public class Settings implements Serializable {
     private String loggerPortDefault;
     private static String loggerProtocol = "SSM";
     private String loggerDefFilePath;
-    private Map<String,File> availableLoggerDefFiles = new HashMap<String,File>(); //TODO Make persistent
+    private Map<String,File> availableLoggerDefFiles = new HashMap<String,File>();
 	
     private static String loggerProfileFilePath;
     private String fileLoggingControllerSwitchId = "S20"; // defogger switch by default
@@ -713,11 +714,10 @@ public class Settings implements Serializable {
         }
     }
 
-	public void CheckDefs()
+	public boolean CheckEcuDefs()
 	{
-		for(File f : FilterCI(Walk(RRECUDEFREPO),".xml"))
+		for(File f : VectorUtils.FilterCI(VectorUtils.Walk(RRECUDEFREPO),".xml"))
 			addEcuDefinitionFile(f);
-		//TODO: verify settings defaults exist, set flags to open DefManager if not.
 		if(ecuDefinitionFiles != null && !ecuDefinitionFiles.isEmpty())
 		{
 			ArrayList<File> reml = new ArrayList<File>();
@@ -725,7 +725,6 @@ public class Settings implements Serializable {
 			{
 				if(!s.exists())
 				{
-					ecuDefExists = false;
 					reml.add(s);//TODO ABSTRACT THIS
 				}
 			}
@@ -739,8 +738,11 @@ public class Settings implements Serializable {
 		}
 		else
 			ecuDefExists = false;
-		
-		for(File f : FilterCI(Walk(RR_LOGGER_REPO),".xml"))
+		return ecuDefExists;
+	}
+	
+	public boolean CheckLoggerDefs(){
+		for(File f : VectorUtils.FilterCI(VectorUtils.Walk(RR_LOGGER_REPO),".xml"))
 			addAvailableLoggerDefFile(f,false);
 		if(!availableLoggerDefFiles.isEmpty())
 		{
@@ -759,46 +761,22 @@ public class Settings implements Serializable {
 				try{
 					setLoggerDefFilePath(availableLoggerDefFiles.values().iterator().next().getAbsolutePath());
 				} catch (Exception e){
-				loggerDefExists = false;
+					loggerDefExists = false;
+					throw new RuntimeException(e);
 				}
 			}
 		}
 		else
 			loggerDefExists = false;
-		
-		if(!new File(carsDefFilePath).exists())
-		{
-			carsDefExists = false;
-		}
+		return loggerDefExists;
 	}
 	
-	public Vector<File> Walk( String path ) {
-
-        File root = new File( path );
-        File[] list = root.listFiles();
-        Vector<File> ret = new Vector<File> ();
-
-        for ( File f : list ) {
-            if ( f.isDirectory() ) {
-                ret.addAll(Walk( f.getAbsolutePath() ));
-            }
-            else {
-                ret.add(f);
-            }
-        }
-        return ret;
-    }
-	
-	public Vector<File> FilterCI( Vector<File> files, String filter){
-		Vector<File> ret = new Vector<File>();
-		for(File f : files)
-		{
-			if(f.getName().toUpperCase().contains(filter.toUpperCase()))
-			{
-				ret.add(f);
-			}
-		}
-		return ret;
+	public boolean CheckCarDefs(){
+		if(!new File(carsDefFilePath).exists())
+			carsDefExists = false;
+		else
+			carsDefExists = true;
+		return carsDefExists;
 	}
 	
 	public void removeEcuDefinitionFile(File s) {
@@ -863,8 +841,17 @@ public class Settings implements Serializable {
 		return loggerDefFilePath;
 	}
 
-	public void setLoggerDefFilePath(String loggerDefFilePath) {
-		this.loggerDefFilePath = loggerDefFilePath;
+	public void setLoggerDefFilePath(String ldfp) {
+		if(ldfp != null && new File(ldfp).exists()){
+			this.loggerDefFilePath = ldfp;
+			loggerDefExists = true;
+		}
+		else if(getLoggerDefFilePath() == null || !new File(getLoggerDefFilePath()).exists()){
+			loggerDefExists = false;
+		}
+		else
+			loggerDefExists = true;
+		
 	}
 
 	public static String getGitDefsBaseDir() {

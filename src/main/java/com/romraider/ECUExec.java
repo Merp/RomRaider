@@ -34,7 +34,6 @@ import static com.romraider.util.RomServer.isRunning;
 import static com.romraider.util.RomServer.sendRomToOpenInstance;
 import static com.romraider.util.RomServer.waitForRom;
 
-import com.romraider.swing.DefinitionManager;
 import com.romraider.util.JREChecker;
 import com.romraider.util.SettingsManager;
 import com.romraider.util.SettingsManagerImpl;
@@ -46,13 +45,8 @@ import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
 import org.apache.log4j.Logger;
 import static org.apache.log4j.Logger.getLogger;
 
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.File;
 import java.text.DateFormat;
-
-import javax.swing.JFrame;
 
 public class ECUExec {
     private static final Logger LOGGER = getLogger(ECUExec.class);
@@ -61,7 +55,6 @@ public class ECUExec {
     public static Settings settings;
     public static SettingsManager settingsManager;
 	public static DefinitionRepoManager definitionRepoManager;
-	private static DefinitionManager definitionManager;
 	protected static Object lock;
 
     private ECUExec() {
@@ -133,26 +126,6 @@ public class ECUExec {
         settings = settingsManager.load();
         definitionRepoManager = new DefinitionRepoManager();
         definitionRepoManager.Load();
-        settings.CheckDefs();
-        if(!settings.isEcuDefExists())
-    	{
-        	definitionManager = new DefinitionManager();
-        	definitionManager.runModal(true);
-    	}
-        if(!settings.isCarsDefExists())
-        {
-        	showMessageDialog(definitionRepoManager,
-                    "Error configuring dyno definition, configure manually! ",
-                    "Dyno definition configuration failed.",
-                    INFORMATION_MESSAGE);
-        }
-        if(!settings.isLoggerDefExists())
-        {
-        	showMessageDialog(definitionRepoManager,
-                    "Error configuring logger definition, configure definitions manually! ",
-                    "Logger definition configuration failed.",
-                    INFORMATION_MESSAGE);
-        }
     }
 
     private static void openLogger(String[] args) {
