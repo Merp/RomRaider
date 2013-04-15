@@ -19,29 +19,24 @@
 
 package com.romraider.util;
 
-import static com.romraider.Version.VERSION;
 import static javax.swing.JOptionPane.INFORMATION_MESSAGE;
 import static javax.swing.JOptionPane.showMessageDialog;
+import static org.apache.log4j.Logger.getLogger;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
+import org.apache.log4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 import com.romraider.Settings;
 import com.romraider.swing.JProgressPane;
-import com.romraider.xml.DOMSettingsBuilder;
-import com.romraider.xml.DOMSettingsUnmarshaller;
 import com.romraider.yaml.SkipEmptyRepresenterAwtSafe;
-import com.sun.org.apache.xerces.internal.parsers.DOMParser;
 
 public final class SettingsManagerImpl implements SettingsManager {
-    private static final String SETTINGS_FILE = "/.RomRaider/settings.xml";
+	private static final Logger LOGGER = getLogger(SettingsManager.class);
     private static final String HOME = System.getProperty("user.home");
     private static final String SETTINGS_YAML_FILE = HOME + "/.RomRaider/settings.yaml";
 
@@ -54,67 +49,41 @@ public final class SettingsManagerImpl implements SettingsManager {
     public void save(Settings s){
     	saveYaml(s);
     }
-    
+
     @Override
-    public Settings loadYaml() {
+    public void save(Settings settings, JProgressPane progress) {
+        saveYaml(settings);
+        //TODO implement saveYaml with progress bar.
+    }
+    
+    private Settings loadYaml() {
     	try{
+    		LOGGER.info("Loading YAML settings file from " + SETTINGS_YAML_FILE);
 	    	Yaml yaml = new Yaml();
 	    	FileReader fr = new FileReader(SETTINGS_YAML_FILE);
 	    	return (Settings) yaml.load(fr);
 	    } catch (FileNotFoundException e) {
+	    	LOGGER.info("Yaml settings file not found, using default settings");
 	        showMessageDialog(null, "Settings file not found.\nUsing default settings.",
 	                "Error Loading Settings", INFORMATION_MESSAGE);
 	        return new Settings();
 	    } catch (Exception e) {
+	    	LOGGER.error("Error loading YAML settings file: " + e.getMessage());
 	        throw new RuntimeException(e);
 	    }
     }
     
-    @Override
-    public void saveYaml(Settings settings){
+    private void saveYaml(Settings settings){
     	Yaml yaml = new Yaml(new SkipEmptyRepresenterAwtSafe());
     	try {
+    		LOGGER.info("Saving YAML settings file to " + SETTINGS_YAML_FILE);
     		new File(HOME + "/.RomRaider").mkdir();
 			FileWriter fw = new FileWriter(SETTINGS_YAML_FILE);
 			yaml.dump(settings,fw);
 			fw.close();
     	} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+    		LOGGER.error("Error saving YAML settings file: " + e.getMessage());
+			throw new RuntimeException(e);
 		}
-    }
-    
-    @Override
-    public Settings loadXML() {
-        try {
-            InputSource src = new InputSource(new FileInputStream(new File(HOME + SETTINGS_FILE)));
-            DOMSettingsUnmarshaller domUms = new DOMSettingsUnmarshaller();
-            DOMParser parser = new DOMParser();
-            parser.parse(src);
-            Document doc = parser.getDocument();
-            return domUms.unmarshallSettings(doc.getDocumentElement());
-        } catch (FileNotFoundException e) {
-            showMessageDialog(null, "Settings file not found.\nUsing default settings.",
-                    "Error Loading Settings", INFORMATION_MESSAGE);
-            return new Settings();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void saveXML(Settings settings) {
-        save(settings, new JProgressPane());
-    }
-
-    @Override
-    public void save(Settings settings, JProgressPane progress) {
-        DOMSettingsBuilder builder = new DOMSettingsBuilder();
-        try {
-            new File(HOME + "/.RomRaider/").mkdir();		// Creates directory if it does not exist
-            builder.buildSettings(settings, new File(HOME + SETTINGS_FILE), progress, VERSION);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }

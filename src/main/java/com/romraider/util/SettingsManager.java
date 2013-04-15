@@ -28,12 +28,4 @@ public interface SettingsManager {
     void save(Settings settings);
 
     void save(Settings settings, JProgressPane progress);
-
-	Settings loadXML();
-	
-	void saveXML(Settings settings);
-	
-	Settings loadYaml();
-	
-	void saveYaml(Settings settings);
 }
