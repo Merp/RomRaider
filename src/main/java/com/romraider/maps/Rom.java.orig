@@ -210,9 +210,33 @@ public class Rom implements Serializable {
             if (table.getName().contains("Checksum Fix"))
                 checksumTables.add(table);
         }
+<<<<<<< HEAD
         
         if (checksumTables.size() == 1) {
             final Table checksum = checksumTables.get(0);
+=======
+        if (checksum != null && !checksum.isLocked()) {
+            calculateRomChecksum(binData, checksum.getStorageAddress(), checksum.getDataSize());
+        }
+        else if (checksum != null && checksum.isLocked() && !checksum.isButtonSelected()) {
+            Object[] options = {"Yes", "No"};
+            String message = String.format("One or more ROM image Checksums is invalid.  " +
+                    "Calculate new Checksums?%n" +
+                    "(NOTE: this will only fix the Checksums it will NOT repair a corrupt ROM image)");
+            int answer = showOptionDialog(SwingUtilities.windowForComponent(checksum),
+                    message,
+                    "Checksum Fix",
+                    DEFAULT_OPTION,
+                    QUESTION_MESSAGE,
+                    null,
+                    options,
+                    options[0]);
+            if (answer == 0) {
+                calculateRomChecksum(binData, checksum.getStorageAddress(), checksum.getDataSize());
+            }
+        }
+        if (checksum != null) {
+>>>>>>> Clean Up:
             byte count = binData[checksum.getStorageAddress() + 207];
             if (count == -1) {
                 count = 1;
@@ -241,7 +265,7 @@ public class Rom implements Serializable {
                 final String message = String.format("One or more ROM image Checksums is invalid.  " +
                         "Calculate new Checksums?%n" +
                         "(NOTE: this will only fix the Checksums it will NOT repair a corrupt ROM image)");
-                int answer = showOptionDialog(SwingUtilities.windowForComponent(checksum),
+                int answer = showOptionDialog(checksum.getEditor(),
                         message,
                         "Checksum Fix",
                         DEFAULT_OPTION,
