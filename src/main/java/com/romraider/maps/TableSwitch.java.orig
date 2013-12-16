@@ -87,8 +87,13 @@ public class TableSwitch extends Table {
         // if the result is >0: position of failed checksum
         // if the result is  0: all the checksums matched
         // if the result is -1: all the checksums have been previously disabled
+<<<<<<< HEAD
         if (super.getName().contains("Checksum Fix")) {
+            int result = validateRomChecksum(input, storageAddress, dataSize);
+=======
+        if (super.getName().equalsIgnoreCase("Checksum Fix")) {
             int result = validateRomChecksum(input, getStorageAddress(), dataSize);
+>>>>>>> Fixed issues  where empty or null axis name throws error.
             String message = String.format(
                     "Checksum No. %d is invalid in table: %s%n" +
                     "The ROM image may be corrupt.%n" +
