@@ -39,17 +39,18 @@ import static org.apache.log4j.Logger.getLogger;
 
 import java.io.File;
 import java.text.DateFormat;
+
 import org.apache.log4j.Logger;
 
 import com.romraider.editor.ecu.ECUEditor;
 import com.romraider.util.JREChecker;
-import com.romraider.definition.DefinitionRepoManager;
+import com.romraider.definition.DefinitionManager;
 
 public class ECUExec {
     private static final Logger LOGGER = getLogger(ECUExec.class);
     private static final String START_LOGGER_ARG = "-logger";
     private static final String START_LOGGER_FULLSCREEN_ARG = "-logger.fullscreen";
-    private static DefinitionRepoManager definitionRepoManager;
+    private static DefinitionManager definitionManager;
     protected static Object lock;
 
     private ECUExec() {
@@ -117,8 +118,8 @@ public class ECUExec {
     }
     
     private static void Initialize(){
-        definitionRepoManager = new DefinitionRepoManager();
-        getDefinitionRepoManager().Load();
+        definitionManager = new DefinitionManager();
+        definitionManager.Initialize();
     }
 
     private static void openLogger(String[] args) {
@@ -161,8 +162,7 @@ public class ECUExec {
         }
     }
 
-	public static DefinitionRepoManager getDefinitionRepoManager() {
-		return definitionRepoManager;
+	public static DefinitionManager getDefinitionManager() {
+        return definitionManager;
 	}
-	
 }

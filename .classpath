@@ -51,6 +51,9 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/romraider/lib/common/org.eclipse.jgit-2.1.0.201209190230-r-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="lib/common/jdom-2.0.5.jar">
+		<attribute name="javadoc_location" value="jar:platform:/resource/romraider/lib/common/jdom-2.0.5-javadoc.jar!/"/>
+	</classpathentry>
 	<classpathentry kind="lib" path="lib/common/jsch-0.1.50.jar"/>
 	<classpathentry kind="output" path="target"/>
 </classpath>
