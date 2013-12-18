@@ -21,6 +21,8 @@ package com.romraider.logger.ecu.ui.swing.menubar.action;
 
 import static com.romraider.logger.ecu.ui.swing.menubar.util.FileHelper.getDefinitionFileChooser;
 import static com.romraider.logger.ecu.ui.swing.menubar.util.FileHelper.getFile;
+
+import com.romraider.swing.SettingsForm;
 import static javax.swing.JFileChooser.APPROVE_OPTION;
 
 import java.awt.event.ActionEvent;
@@ -40,21 +42,18 @@ public final class LoggerDefinitionLocationAction extends AbstractAction {
 
     @Override
     public void actionPerformed(ActionEvent actionEvent) {
-        try {
-            setDefinitionLocationDialog();
-            logger.loadLoggerParams();
-        } catch (Exception e) {
-            logger.reportError(e);
-        }
+    	SettingsForm form = new SettingsForm(logger);
+        form.setLocationRelativeTo(logger);
+        form.setVisible(true);
     }
 
     private void setDefinitionLocationDialog() throws Exception {
         logger.getSettings();
-        File lastConfigPath = getFile(SettingsManager.getSettings().getLoggerDefinitionFilePath());
+        File lastConfigPath = getFile(SettingsManager.getSettings().getLoggerDefFilePath());
         JFileChooser fc = getDefinitionFileChooser(lastConfigPath);
         if (fc.showOpenDialog(logger) == APPROVE_OPTION) {
             String path = fc.getSelectedFile().getAbsolutePath();
-            logger.getSettings().setLoggerDefinitionFilePath(path);
+            logger.getSettings().setLoggerDefFilePath(path);
             logger.reportMessage("Logger definition location successfully updated: " + path);
         }
     }

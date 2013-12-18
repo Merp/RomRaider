@@ -21,7 +21,6 @@ package com.romraider.swing;
 
 import static com.romraider.Version.ABOUT_ICON;
 import static com.romraider.Version.BUILDNUMBER;
-import static com.romraider.Version.ECU_DEFS_URL;
 import static com.romraider.Version.PRODUCT_NAME;
 import static com.romraider.Version.SUPPORT_URL;
 import static com.romraider.Version.VERSION;
@@ -47,7 +46,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JSeparator;
 
-import com.centerkey.utils.BareBonesBrowserLaunch;
 import com.romraider.Settings;
 import com.romraider.editor.ecu.ECUEditor;
 import com.romraider.editor.ecu.ECUEditorManager;
@@ -69,13 +67,9 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
     private final JMenuItem closeAll = new JMenuItem("Close All Images");
     private final JMenuItem exit = new JMenuItem("Exit");
 
-    private final JMenu definitionMenu = new JMenu("ECU Definitions");
-    private final JMenuItem defManager = new JMenuItem("ECU Definition Manager...");
     private final JMenuItem editDefinition = new JMenuItem("Edit ECU Definitions...");
-    private final JMenuItem updateDefinition = new JMenuItem("Get ECU Definitions...");
-
     private final JMenu editMenu = new JMenu("Edit");
-    private final JMenuItem settings = new JMenuItem(PRODUCT_NAME + " Settings...");
+    private final JMenuItem settingsMenuItem = new JMenuItem(PRODUCT_NAME + " Settings...");
     private final JMenuItem compareImages = new JMenuItem("Compare Images...");
     private final JMenu convertRom = new JMenu("Convert Image");
     private final JMenuItem convertIncrease = new JMenuItem("160KB --> 192KB...");
@@ -145,9 +139,8 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
         // edit menu items
         add(editMenu);
         editMenu.setMnemonic('E');
-
-        editMenu.add(settings);
-        settings.addActionListener(this);
+        editMenu.add(settingsMenuItem);
+        settingsMenuItem.addActionListener(this);
         settings.setMnemonic('S');
 
         editMenu.add(compareImages);
@@ -168,17 +161,13 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
         convertGroup.add(convertIncrease);
         convertGroup.add(convertDecrease);
 
-        // ecu def menu items
-        add(definitionMenu);
-        definitionMenu.setMnemonic('D');
+        settingsMenuItem.setMnemonic('S');
 
         definitionMenu.add(defManager);
         defManager.addActionListener(this);
-        defManager.setMnemonic('D');
 
         definitionMenu.add(updateDefinition);
         updateDefinition.addActionListener(this);
-        updateDefinition.setMnemonic('U');
 
         //definitionMenu.add(editDefinition);
         //editDefinition.setMnemonic('E');
@@ -368,7 +357,7 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
                         getSettings().getSupportURL()), "Exception", ERROR_MESSAGE);
             }
 
-        } else if (e.getSource() == settings) {
+        } else if (e.getSource() == settingsMenuItem) {
             SettingsForm form = new SettingsForm();
             form.setLocationRelativeTo(parent);
             form.setVisible(true);
@@ -396,11 +385,6 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
                         new DebugPanel(ex, getSettings().getSupportURL()), "Exception", ERROR_MESSAGE);
             }
 
-        } else if (e.getSource() == defManager) {
-            DefinitionManager form = new DefinitionManager();
-            form.setLocationRelativeTo(parent);
-            form.setVisible(true);
-
         } else if (e.getSource() == level1) {
             parent.setUserLevel(1);
 
@@ -418,9 +402,6 @@ public class ECUEditorMenuBar extends JMenuBar implements ActionListener {
 
         } else if (e.getSource() == openLogger) {
             parent.launchLogger();
-        } else if (e.getSource() == updateDefinition) {
-            BareBonesBrowserLaunch.openURL(ECU_DEFS_URL);
-
         } else if (e.getSource() == launchRamTuneTestApp) {
             RamTuneTestApp.startTestApp(DISPOSE_ON_CLOSE);
 

@@ -21,6 +21,7 @@ package com.romraider.logger.ecu.ui.tab.dyno;
 
 import static com.centerkey.utils.BareBonesBrowserLaunch.openURL;
 import static com.romraider.Version.CARS_DEFS_URL;
+import com.romraider.ECUExec;
 import static com.romraider.logger.car.util.SpeedCalculator.calculateMph;
 import static com.romraider.logger.car.util.SpeedCalculator.calculateRpm;
 import static com.romraider.logger.car.util.TorqueCalculator.calculateTorque;
@@ -90,7 +91,7 @@ import com.romraider.util.SettingsManager;
 public final class DynoControlPanel extends JPanel {
     private static final long serialVersionUID = 3787020251963102201L;
     private static final Logger LOGGER = Logger.getLogger(DynoControlPanel.class);
-    private static final String CARS_FILE = "cars_def.xml";
+    private static final String CARS_FILE = SettingsManager.getSettings().getCarsDefFilePath();
     private static final String MISSING_CAR_DEF = "Missing cars_def.xml";
     private static final String ENGINE_SPEED = "P8";
     private static final String VEHICLE_SPEED = "P9";
@@ -239,9 +240,11 @@ public final class DynoControlPanel extends JPanel {
     private final JRadioButton iButton = new JRadioButton(IMPERIAL);
     private final JRadioButton mButton = new JRadioButton(METRIC);
     private final JCheckBox loadFileCB = new JCheckBox("Load From File");
+    private Settings settings;
 
     public DynoControlPanel(Component parent, DataRegistrationBroker broker, ECUEditor ecuEditor, DynoChartPanel chartPanel) {
         checkNotNull(parent, broker, chartPanel);
+        settings = SettingsManager.getSettings();
         this.parent = parent;
         this.broker = broker;
         this.chartPanel = chartPanel;
@@ -1443,7 +1446,7 @@ public final class DynoControlPanel extends JPanel {
             Settings settings = SettingsManager.getSettings();
             File carDef = null;
             final String SEPARATOR = System.getProperty("file.separator");
-            final String loggerFilePath = settings.getLoggerDefinitionFilePath();
+            final String loggerFilePath = settings.getLoggerDefFilePath();
             if (loggerFilePath != null) {
                 final int index = loggerFilePath.lastIndexOf(SEPARATOR);
                 if (index > 0) {

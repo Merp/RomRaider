@@ -20,6 +20,7 @@
 package com.romraider.logger.ecu;
 
 import static com.centerkey.utils.BareBonesBrowserLaunch.openURL;
+import static com.romraider.Version.ECU_DEFS_URL;
 import static com.romraider.Version.LOGGER_DEFS_URL;
 import static com.romraider.Version.MIN_LOG_DEF_VERSION;
 import static com.romraider.Version.PRODUCT_NAME;
@@ -62,6 +63,7 @@ import static javax.swing.SwingUtilities.invokeLater;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GraphicsDevice;
@@ -108,7 +110,10 @@ import javax.swing.table.TableColumn;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.centerkey.utils.BareBonesBrowserLaunch;
+import com.romraider.ECUExec;
 import com.romraider.Settings;
+import com.romraider.definition.DefinitionRepoManager;
 import com.romraider.editor.ecu.ECUEditor;
 import com.romraider.io.serial.port.SerialPortRefresher;
 import com.romraider.logger.ecu.comms.controller.LoggerController;
@@ -233,6 +238,8 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     private JLabel messageLabel;
     private JLabel calIdLabel;
     private JLabel ecuIdLabel;
+    private JLabel defVersionLabel;
+    private String defVersionType = "Definition Version";
     private JLabel statsLabel;
     private JTabbedPane tabbedPane;
     private SerialPortComboBox portsComboBox;
@@ -282,7 +289,9 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     private StatusIndicator statusIndicator;
     private List<EcuSwitch> dtcodes = new ArrayList<EcuSwitch>();
 
+    private DefinitionRepoManager definitionRepoManager;
     public EcuLogger() {
+    //TODO handle settings.
         super(ECU_LOGGER_TITLE);
         construct();
     }
@@ -373,6 +382,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
                             LOGGER.info("CAL ID: " + calId + ", Car: " + carString);
                             calIdLabel.setText(buildEcuInfoLabelText(CAL_ID_LABEL, calId));
                             ecuIdLabel.setText(buildEcuInfoLabelText(target + " ID", ecuId));
+                            defVersionLabel = new JLabel(buildDefVersionLabelText(defVersionType, defVersion));
                             loadResult = String.format("Loading logger config for new %s ID: %s, ", target, ecuId);
                             loadLoggerParams();
                             loadUserProfile(getSettings().getLoggerProfileFilePath());
@@ -424,6 +434,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
         messageLabel = new JLabel(ECU_LOGGER_TITLE);
         calIdLabel = new JLabel(buildEcuInfoLabelText(CAL_ID_LABEL, null));
         ecuIdLabel = new JLabel(buildEcuInfoLabelText(target + " ID", null));
+        defVersionLabel = new JLabel(buildDefVersionLabelText(defVersionType, defVersion));
         statsLabel = buildStatsLabel();
         tabbedPane = new JTabbedPane(BOTTOM);
         portsComboBox = new SerialPortComboBox();
@@ -520,7 +531,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     }
 
     private void loadLoggerConfig() {
-        String loggerConfigFilePath = getSettings().getLoggerDefinitionFilePath();
+        String loggerConfigFilePath = getSettings().getLoggerDefFilePath();
         if (isNullOrEmpty(loggerConfigFilePath)) showMissingConfigDialog();
         else {
             try {
@@ -534,14 +545,8 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
                 dtcodes = dataLoader.getEcuCodes();
                 if (target.equals("ECU")) initFileLoggingController(dataLoader.getFileLoggingControllerSwitch());
                 getSettings().setLoggerConnectionProperties(dataLoader.getConnectionProperties());
-                if (dataLoader.getDefVersion() == null) {
-                    defVersion = "na";
-                }
-                else {
-                    defVersion = dataLoader.getDefVersion();
-                }
-
-                if ( defVersion.equals("na") ||
+                
+            	if ( dataLoader.getDefVersion() == null ||
                         Integer.parseInt(defVersion) < MIN_LOG_DEF_VERSION ) {
                     final String wrongDefVersion = "This version of RomRaider " +
                             "Logger requires a logger definfition XML\nfile of " +
@@ -549,14 +554,28 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
                             "to a definition file format change.\n\nIncorrect " +
                             "results may occur if the definition file " +
                             "is not updated.\nUse the Help menu 'Update Logger " +
-                            "Definition' item to go online\nand donwload the " +
+                            "Definition' item to go online\nand download the " +
                             "latest logger definition.\n";
                     showMessageDialog(this,
                             wrongDefVersion,
                             "Configuration", INFORMATION_MESSAGE);
-                    throw new Exception(wrongDefVersion);
+                    //TODO: Is it necessary to throw an exception here? 
+                    // Or just notify the logger that the user has a shady definition
+                    //throw new Exception(wrongDefVersion);
+                    LOGGER.debug(wrongDefVersion);
                 }
-
+            	
+                if (dataLoader.getDefVersion() == null) {
+                    defVersion = ECUExec.getDefinitionRepoManager().getGitCurrentHash();
+                    defVersionType = "Definition Hash";
+                }
+                else {
+                    defVersion = dataLoader.getDefVersion();
+                    defVersionType = "Definition Version";
+                    //TODO: make sure this gets called when we load a new defintion
+                }  
+                defVersionLabel = new JLabel(buildDefVersionLabelText(defVersionType, defVersion));
+                
                 loadResult = String.format(
                         "%sloaded %s: %d parameters, %d switches from def version %s.",
                         loadResult,
@@ -1088,6 +1107,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
         ecuIdPanel.setBorder(createLoweredBevelBorder());
         ecuIdPanel.add(calIdLabel);
         ecuIdPanel.add(ecuIdLabel);
+        ecuIdPanel.add(defVersionLabel);
         constraints.gridx = 2;
         constraints.gridy = 0;
         constraints.gridwidth = 1;
@@ -1112,6 +1132,10 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
 
     private String buildEcuInfoLabelText(String label, String value) {
         return label + ": " + (isNullOrEmpty(value) ? " Unknown " : value);
+    }
+    
+    private String buildDefVersionLabelText(String label, String value){
+    	return label + ": " + (isNullOrEmpty(value) ? " Unknown " : value);
     }
 
     private JSplitPane buildSplitPane(JComponent leftComponent, JComponent rightComponent) {

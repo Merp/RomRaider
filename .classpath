@@ -46,5 +46,11 @@
 			<attribute name="javadoc_location" value="http://www.phidgets.com/documentation/web/javadoc/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="lib/common/org.eclipse.jgit-2.1.0.201209190230-r.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/romraider/lib/common/org.eclipse.jgit-2.1.0.201209190230-r-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="lib/common/jsch-0.1.50.jar"/>
 	<classpathentry kind="output" path="target"/>
 </classpath>

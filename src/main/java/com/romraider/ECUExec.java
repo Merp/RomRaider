@@ -39,16 +39,19 @@ import static org.apache.log4j.Logger.getLogger;
 
 import java.io.File;
 import java.text.DateFormat;
-
 import org.apache.log4j.Logger;
 
 import com.romraider.editor.ecu.ECUEditor;
 import com.romraider.util.JREChecker;
+import com.romraider.util.SettingsManager;
+import com.romraider.definition.DefinitionRepoManager;
 
 public class ECUExec {
     private static final Logger LOGGER = getLogger(ECUExec.class);
     private static final String START_LOGGER_ARG = "-logger";
     private static final String START_LOGGER_FULLSCREEN_ARG = "-logger.fullscreen";
+    private static DefinitionRepoManager definitionRepoManager;
+    protected static Object lock;
 
     private ECUExec() {
         throw new UnsupportedOperationException();
@@ -92,6 +95,7 @@ public class ECUExec {
             }
         } else {
             // open editor or logger
+        	Initialize();
             if (containsLoggerArg(args)) {
                 openLogger(args);
             } else {
@@ -112,9 +116,14 @@ public class ECUExec {
         }
         return false;
     }
+    
+    private static void Initialize(){
+        definitionRepoManager = new DefinitionRepoManager();
+        getDefinitionRepoManager().Load();
+    }
 
     private static void openLogger(String[] args) {
-        startLogger(EXIT_ON_CLOSE, args);
+    	startLogger(EXIT_ON_CLOSE, args);
     }
 
     private static void openRom(final ECUEditor editor, final String rom) {
@@ -152,4 +161,9 @@ public class ECUExec {
             LOGGER.error("Error occurred", e);
         }
     }
+
+	public static DefinitionRepoManager getDefinitionRepoManager() {
+		return definitionRepoManager;
+	}
+	
 }
