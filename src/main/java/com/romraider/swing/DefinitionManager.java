@@ -22,22 +22,38 @@ package com.romraider.swing;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.Vector;
 
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.ListSelectionModel;
 
 import com.romraider.editor.ecu.ECUEditorManager;
+import com.romraider.ECUExec;
+import com.romraider.Settings;
 import com.romraider.util.SettingsManager;
 
-public class DefinitionManager extends javax.swing.JFrame implements ActionListener {
+import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.Alignment;
+import javax.swing.LayoutStyle.ComponentPlacement;
+import javax.swing.SwingConstants;
+
+import java.awt.Component;
+
+public class DefinitionManager extends javax.swing.JFrame implements ActionListener, Runnable {
 
     private static final long serialVersionUID = -3920843496218196737L;
     public static int MOVE_UP = 0;
     public static int MOVE_DOWN = 1;
+    private static Settings settings = SettingsManager.getSettings();
 
+    //ECUEditor parent;
     Vector<String> fileNames;
+	protected Object lock;
 
     public DefinitionManager() {
         this.setIconImage(ECUEditorManager.getECUEditor().getIconImage());
@@ -55,8 +71,36 @@ public class DefinitionManager extends javax.swing.JFrame implements ActionListe
         btnMoveDown.addActionListener(this);
         btnApply.addActionListener(this);
         btnUndo.addActionListener(this);
-
     }
+    
+    @Override
+    public void run() {
+    	this.setLocationByPlatform(true);//this.setLocationRelativeTo(parent);
+        this.setVisible(true);
+        this.initSettings();
+        
+	}
+    
+    public void runModal(boolean b) {
+    	this.run();
+    	if(b)
+    		this.addFile();
+    	while(this.isVisible())
+    	{
+    		try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    	}
+	}
+    
+    private WindowListener tDMWL = new WindowAdapter() {
+    	@Override public void windowClosed(WindowEvent evt){
+    		
+    	};
+    };
 
     private void initSettings() {
         // add definitions to list
@@ -106,61 +150,58 @@ public class DefinitionManager extends javax.swing.JFrame implements ActionListe
 
         btnUndo.setText("Undo");
 
-        org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-                layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                .add(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                .add(jScrollPane1, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, 448, Short.MAX_VALUE)
-                                .add(org.jdesktop.layout.GroupLayout.TRAILING, layout.createSequentialGroup()
-                                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.TRAILING)
-                                                .add(layout.createSequentialGroup()
-                                                        .add(btnSave)
-                                                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                                        .add(btnApply)
-                                                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                                        .add(btnUndo)
-                                                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                                        .add(btnCancel))
-                                                        .add(layout.createSequentialGroup()
-                                                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                                                                        .add(defLabel)
-                                                                        .add(layout.createSequentialGroup()
-                                                                                .add(btnMoveDown)
-                                                                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                                                                .add(btnMoveUp)))
-                                                                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED, 80, Short.MAX_VALUE)
-                                                                                .add(btnAddDefinition)))
-                                                                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                                                                .add(btnRemoveDefinition)))
-                                                                                .addContainerGap())
-                );
-
-        layout.linkSize(new java.awt.Component[]{btnAddDefinition, btnMoveDown, btnMoveUp, btnRemoveDefinition}, org.jdesktop.layout.GroupLayout.HORIZONTAL);
-
+        GroupLayout layout = new GroupLayout(getContentPane());
+        layout.linkSize(SwingConstants.HORIZONTAL, new Component[] {btnMoveUp, btnMoveDown, btnAddDefinition, btnRemoveDefinition});
         layout.setVerticalGroup(
-                layout.createParallelGroup(org.jdesktop.layout.GroupLayout.LEADING)
-                .add(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .add(defLabel)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(jScrollPane1, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                        .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                                .add(btnMoveUp)
-                                .add(btnMoveDown)
-                                .add(btnRemoveDefinition, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 23, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE)
-                                .add(btnAddDefinition))
-                                .addPreferredGap(org.jdesktop.layout.LayoutStyle.RELATED)
-                                .add(layout.createParallelGroup(org.jdesktop.layout.GroupLayout.BASELINE)
-                                        .add(btnSave)
-                                        .add(btnApply)
-                                        .add(btnUndo)
-                                        .add(btnCancel))
-                                        .addContainerGap(org.jdesktop.layout.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                );
+        	layout.createParallelGroup(Alignment.LEADING)
+        		.addGroup(layout.createSequentialGroup()
+        			.addContainerGap()
+        			.addComponent(defLabel)
+        			.addPreferredGap(ComponentPlacement.RELATED)
+        			.addComponent(jScrollPane1, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+        			.addPreferredGap(ComponentPlacement.RELATED)
+        			.addGroup(layout.createParallelGroup(Alignment.BASELINE)
+        				.addComponent(btnMoveUp)
+        				.addComponent(btnMoveDown)
+        				.addComponent(btnRemoveDefinition, GroupLayout.PREFERRED_SIZE, 23, GroupLayout.PREFERRED_SIZE)
+        				.addComponent(btnAddDefinition))
+        			.addPreferredGap(ComponentPlacement.RELATED)
+        			.addGroup(layout.createParallelGroup(Alignment.BASELINE)
+        				.addComponent(btnSave)
+        				.addComponent(btnApply)
+        				.addComponent(btnUndo)
+        				.addComponent(btnCancel))
+        			.addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+        layout.setHorizontalGroup(
+        	layout.createParallelGroup(Alignment.LEADING)
+        		.addGroup(layout.createSequentialGroup()
+        			.addContainerGap()
+        			.addGroup(layout.createParallelGroup(Alignment.TRAILING)
+        				.addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 448, Short.MAX_VALUE)
+        				.addGroup(layout.createSequentialGroup()
+        					.addGroup(layout.createParallelGroup(Alignment.TRAILING)
+        						.addGroup(layout.createSequentialGroup()
+        							.addComponent(btnSave)
+        							.addPreferredGap(ComponentPlacement.RELATED)
+        							.addComponent(btnApply)
+        							.addPreferredGap(ComponentPlacement.RELATED)
+        							.addComponent(btnUndo)
+        							.addPreferredGap(ComponentPlacement.RELATED)
+        							.addComponent(btnCancel))
+        						.addGroup(layout.createParallelGroup(Alignment.LEADING)
+        							.addComponent(defLabel)
+        							.addGroup(layout.createSequentialGroup()
+        								.addComponent(btnMoveDown)
+        								.addPreferredGap(ComponentPlacement.RELATED)
+        								.addComponent(btnMoveUp)
+        								.addPreferredGap(ComponentPlacement.UNRELATED)
+        								.addComponent(btnAddDefinition))))
+        					.addPreferredGap(ComponentPlacement.RELATED)
+        					.addComponent(btnRemoveDefinition)))
+        			.addContainerGap())
+        );
+        getContentPane().setLayout(layout);
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
@@ -205,10 +246,11 @@ public class DefinitionManager extends javax.swing.JFrame implements ActionListe
 
         // save
         SettingsManager.getSettings().setEcuDefinitionFiles(output);
+        settings.setEcuDefinitionFiles(output);
     }
 
     public void addFile() {
-        JFileChooser fc = new JFileChooser("./");
+        JFileChooser fc = new JFileChooser(Settings.RRECUDEFREPO);
         fc.setFileFilter(new XMLFilter());
 
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -259,5 +301,4 @@ public class DefinitionManager extends javax.swing.JFrame implements ActionListe
     private javax.swing.JList definitionList;
     private javax.swing.JScrollPane jScrollPane1;
     // End of variables declaration//GEN-END:variables
-
 }
