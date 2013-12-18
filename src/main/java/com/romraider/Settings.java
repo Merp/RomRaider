@@ -194,6 +194,10 @@ public class Settings implements Serializable {
     private int tableClickBehavior = 0; // TableTreeNode click behavior. 0=open/close frame, 1=open/focus frame
     private boolean colorAxis = false;
 
+    /* ECUFLASH def settings */
+    public final String ECUFLASHDEFREPO = HOME + "/.RomRaider/SubaruDefs/ECUFlash/";
+	private Vector<File> ecuFlashDefinitionFiles = new Vector<File>();
+
     private String loggerPort;
     private String loggerPortDefault;
     private static String loggerProtocol = SSM;
@@ -240,6 +244,7 @@ public class Settings implements Serializable {
     private String defaultScale = "Metric";
 
     private Map<String, IntfKitSensor> phidgetSensors;
+
 
     public Settings() {
         //center window by default
@@ -870,4 +875,13 @@ public class Settings implements Serializable {
 
         this.phidgetSensors = phidgetSensors;
     }
+	}
+
+	public void addEcuFlashDefinitionFile(File f) {
+    		if(!ecuFlashDefinitionFiles.contains(f))
+        	ecuFlashDefinitionFiles.add(f);
+	}
+
+	public Vector<File> getEcuFlashDefinitionFiles() {
+		return ecuFlashDefinitionFiles;
 }

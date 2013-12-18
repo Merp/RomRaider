@@ -44,11 +44,13 @@ import org.apache.log4j.Logger;
 
 import com.romraider.editor.ecu.ECUEditor;
 import com.romraider.util.JREChecker;
+import com.romraider.definition.DefinitionManager;
 
 public class ECUExec {
     private static final Logger LOGGER = getLogger(ECUExec.class);
     private static final String START_LOGGER_ARG = "-logger";
     private static final String START_LOGGER_FULLSCREEN_ARG = "-logger.fullscreen";
+    private static DefinitionManager definitionManager;
 
     private ECUExec() {
         throw new UnsupportedOperationException();
@@ -113,6 +115,8 @@ public class ECUExec {
         return false;
     }
 
+        definitionManager = new DefinitionManager();
+        definitionManager.Initialize();
     private static void openLogger(String[] args) {
         startLogger(EXIT_ON_CLOSE, args);
     }
@@ -152,4 +156,6 @@ public class ECUExec {
             LOGGER.error("Error occurred", e);
         }
     }
+	public static DefinitionManager getDefinitionManager() {
+        return definitionManager;
 }

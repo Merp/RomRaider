@@ -9,6 +9,7 @@
 	<classpathentry kind="lib" path="lib/windows/vecmath.jar"/>
 	<classpathentry kind="lib" path="lib/windows/Graph3d.jar"/>
 	<classpathentry kind="lib" path="lib/common/jama-1.0.2.jar"/>
+	<classpathentry kind="lib" path="lib/common/BareBonesBrowserLaunch.jar"/>
 	<classpathentry kind="lib" path="lib/common/jep.jar"/>
 	<classpathentry kind="lib" path="lib/common/Jama.jar"/>
 	<classpathentry kind="lib" path="lib/common/jamlab.jar"/>
@@ -45,8 +46,17 @@
 			<attribute name="javadoc_location" value="http://www.phidgets.com/documentation/web/javadoc/"/>
 		</attributes>
 	</classpathentry>
+<<<<<<< HEAD
+=======
+	<classpathentry kind="lib" path="lib/common/org.eclipse.jgit-2.1.0.201209190230-r.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/romraider/lib/common/org.eclipse.jgit-2.1.0.201209190230-r-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="lib/common/jdom-2.0.5.jar">
 		<attribute name="javadoc_location" value="jar:platform:/resource/romraider/lib/common/jdom-2.0.5-javadoc.jar!/"/>
 	</classpathentry>
+	<classpathentry kind="lib" path="lib/common/jsch-0.1.50.jar"/>
+>>>>>>> 2a4f98a... Initial commit of JDOM2 parsing of per-rom definitions.
 	<classpathentry kind="output" path="target"/>
 </classpath>
