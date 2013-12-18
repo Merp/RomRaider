@@ -110,7 +110,7 @@ public class ECUEditor extends AbstractFrame {
     private SetUserLevelWorker setUserLevelWorker;
     private LaunchLoggerWorker launchLoggerWorker;
     private final ImageIcon editorIcon = new ImageIcon(getClass().getResource("/graphics/romraider-ico.gif"), "RomRaider ECU Editor");
-    private DefinitionRepoManager definitionRepoManager = ECUExec.getDefinitionRepoManager();
+    private DefinitionRepoManager definitionRepoManager = ECUExec.getDefinitionManager().getRepoManager();
     private Settings settings = SettingsManager.getSettings();
     
     public ECUEditor() {
@@ -176,7 +176,6 @@ public class ECUEditor extends AbstractFrame {
     public void checkDefinitions() {
         if (settings.getEcuDefinitionFiles().size() <= 0) {
 	        //Initialize, check, download, update Git Definition Repository
-	    	definitionRepoManager = ECUExec.getDefinitionRepoManager();
 	    	setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 	        
 	        statusPanel.update("Checking Definition Repo Status...",10);

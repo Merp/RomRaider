@@ -99,7 +99,7 @@ public class SettingsForm extends JFrame implements MouseListener {
     EcuLogger parentLogger;
 	private Settings settings;
 	private ECUEditor parentEditor;
-	private static DefinitionRepoManager definitionRepoManager = ECUExec.getDefinitionRepoManager();
+	private static DefinitionRepoManager definitionRepoManager = ECUExec.getDefinitionManager().getRepoManager();
 
     public SettingsForm() {
     

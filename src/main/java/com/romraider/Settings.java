@@ -217,6 +217,10 @@ public class Settings implements Serializable {
 
 	private String carsDefFilePath = RR_CARS_REPO + "cars_def.xml";
 
+    /* ECUFLASH def settings */
+    public final String ECUFLASHDEFREPO = HOME + "/.RomRaider/SubaruDefs/ECUFlash/";
+	private Vector<File> ecuFlashDefinitionFiles = new Vector<File>();
+
     /* Logger settings */
     private String loggerPort;
     private String loggerPortDefault;
@@ -265,6 +269,7 @@ public class Settings implements Serializable {
     private String defaultScale = "Metric";
 
     private Map<String, IntfKitSensor> phidgetSensors;
+
 
     public Settings() {
         //center window by default
@@ -1109,6 +1114,15 @@ public class Settings implements Serializable {
 	
 	public boolean getGitAutoUpdate(){
 		return gitAutoUpdate;
+	}
+
+	public void addEcuFlashDefinitionFile(File f) {
+    		if(!ecuFlashDefinitionFiles.contains(f))
+        	ecuFlashDefinitionFiles.add(f);
+	}
+
+	public Vector<File> getEcuFlashDefinitionFiles() {
+		return ecuFlashDefinitionFiles;
 	}
 
 }

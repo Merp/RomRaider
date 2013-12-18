@@ -289,7 +289,6 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
     private StatusIndicator statusIndicator;
     private List<EcuSwitch> dtcodes = new ArrayList<EcuSwitch>();
 
-    private DefinitionRepoManager definitionRepoManager;
     public EcuLogger() {
     //TODO handle settings.
         super(ECU_LOGGER_TITLE);
@@ -566,7 +565,7 @@ public final class EcuLogger extends AbstractFrame implements MessageListener {
                 }
             	
                 if (dataLoader.getDefVersion() == null) {
-                    defVersion = ECUExec.getDefinitionRepoManager().getGitCurrentHash();
+                    defVersion = ECUExec.getDefinitionManager().getRepoManager().getGitCurrentHash();
                     defVersionType = "Definition Hash";
                 }
                 else {
