@@ -43,7 +43,6 @@ import org.apache.log4j.Logger;
 
 import com.romraider.editor.ecu.ECUEditor;
 import com.romraider.util.JREChecker;
-import com.romraider.util.SettingsManager;
 import com.romraider.definition.DefinitionRepoManager;
 
 public class ECUExec {
