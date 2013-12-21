@@ -1,11 +1,7 @@
 package com.romraider.definition;
 
-import static com.romraider.Version.ECU_DEFS_URL;
-import static javax.swing.JOptionPane.DEFAULT_OPTION;
 import static javax.swing.JOptionPane.INFORMATION_MESSAGE;
-import static javax.swing.JOptionPane.WARNING_MESSAGE;
 import static javax.swing.JOptionPane.showMessageDialog;
-import static javax.swing.JOptionPane.showOptionDialog;
 import static org.apache.log4j.Logger.getLogger;
 
 import java.awt.BorderLayout;
@@ -19,6 +15,7 @@ import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JWindow;
@@ -28,6 +25,7 @@ import org.eclipse.jgit.api.CreateBranchCommand;
 import org.eclipse.jgit.api.CreateBranchCommand.SetupUpstreamMode;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand.ListMode;
+import org.eclipse.jgit.api.ResetCommand.ResetType;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRefNameException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
@@ -39,8 +37,6 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
-import com.centerkey.utils.BareBonesBrowserLaunch;
-import com.romraider.ECUExec;
 import com.romraider.Settings;
 import com.romraider.swing.AbstractFrame;
 import com.romraider.util.SettingsManager;
@@ -58,23 +54,42 @@ public final class DefinitionRepoManager extends AbstractFrame{
 	
 	public DefinitionRepoManager(){
 	}
-	
+	//TODO: Make sure loading a different repo/branch reloads the definitions!!
+	//TODO: Implement hard RESET instead of checkout!
 	public void Load(){
 		UpdateStatus("Checking Definition Repo Status...",10);
         try{
         	if(!InitAndCheckRepoExists()){
-        		LOGGER.info("No definition git repo found, downloading.");
-	        	UpdateStatus("Downloading Definition Repo...",50);
-	        	DownloadRepo();
-	        	settings.SetDefaultDefs();
+        		if ( JOptionPane.showConfirmDialog( null,"Definition files are missing. Download them from: " + settings.defaultGitUrl + " ?? This may take a few minutes!!",
+                        "Download Definitions?", JOptionPane.YES_NO_OPTION, 
+                        JOptionPane.QUESTION_MESSAGE ) == JOptionPane.YES_OPTION )
+        		{
+	        		LOGGER.info("No definition git repo found, downloading.");
+		        	UpdateStatus("Downloading Definition Repo...",50);
+		        	DownloadRepo();
+		        	UpdateDefRepo();
+        		}
+        		showMessageDialog(this,
+	                    "Definition repository successfully configured! ECU definition file(s) must be selected before ROM images can be opened.\nMenu: ECU Definitions > ECU Definition Manager...",
+	                    "Editor Configuration",
+	                    INFORMATION_MESSAGE);
+        		if ( JOptionPane.showConfirmDialog( null,"Would you like to enable definition auto-updates??",
+                        "Definition Configuration?", JOptionPane.YES_NO_OPTION, 
+                        JOptionPane.QUESTION_MESSAGE ) == JOptionPane.YES_OPTION )
+        		{
+        			settings.setGitAutoUpdate(true);
+        		}
+        		else
+        			settings.setGitAutoUpdate(false);
 	        }
 	        else{
-	        	LOGGER.info("Definition git repo found, updating.");
-	        	UpdateStatus("Updating Definition Repo...",75);
-		    	setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-	        	FetchAll(); //TODO: Instead of forcing the updates, prompt user when one is available on the current remote/branch.
-	        	CheckoutBranch(settings.getGitBranch());
-	        	setCursor(null);
+	        	if(settings.getGitAutoUpdate()) {
+		        	LOGGER.info("Definition git repo found, updating.");
+		        	UpdateStatus("Updating Definition Repo...",75);
+			    	setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+			    	UpdateDefRepo();
+		        	setCursor(null);
+	        	}
 	        }
 	        this.startStatus.dispose();		
         }catch(Exception e){
@@ -84,61 +99,25 @@ public final class DefinitionRepoManager extends AbstractFrame{
                     "Definition repository configuration failed.",
                     INFORMATION_MESSAGE);
         }
-        CheckDefinitions();
 	}
 	
-	public void CheckDefinitions(){
-    	if (!settings.CheckEcuDefs()) {
-    		LOGGER.info("Error loading ECU Defs from repository, configure manually.");
-            Object[] options = {"Yes", "No"};
-            int answer = showOptionDialog(null,
-                    "Unable to configure ECU definitions from repository.\n" +
-                    "ECU definition files need to be configured manually before ROM images can be opened.\n" +
-                    "Menu: Settings > Advanced Settings > Definitions...\n" +
-                    "Go online to download the latest definition files?",
-                    "Editor Configuration",
-                    DEFAULT_OPTION,
-                    WARNING_MESSAGE,
-                    null,
-                    options,
-                    options[0]);
-            if (answer == 0)
-                BareBonesBrowserLaunch.openURL(ECU_DEFS_URL);
-        }
-    	if(!settings.CheckLoggerDefs()){
-    		LOGGER.info("Error loading Logger defs from repository, configure manually.");
-            Object[] options = {"Yes", "No"};
-            int answer = showOptionDialog(null,
-                    "Unable to configure Logger definitions from repository.\n" +
-                    "Logger definition files need to be configured manually before logging.\n" +
-                    "Menu: Settings > Advanced Settings > Definitions...\n" +
-                    "Go online to download the latest definition files?",
-                    "Logger Configuration",
-                    DEFAULT_OPTION,
-                    WARNING_MESSAGE,
-                    null,
-                    options,
-                    options[0]);
-            if (answer == 0)
-                BareBonesBrowserLaunch.openURL(ECU_DEFS_URL);
-    	}
-    	if(!settings.CheckCarDefs()){
-    		LOGGER.info("Error loading logger dyno car defs from repository, configure manually.");
-            Object[] options = {"Yes", "No"};
-            int answer = showOptionDialog(null,
-                    "Unable to configure logger dyno car definitions from repository.\n" +
-                    "ECU definition files need to be configured manually before using logger dyno.\n" +
-                    "Menu: Settings > Advanced Settings > Definitions...\n" +
-                    "Go online to download the latest definition files?",
-                    "Logger Dyno Configuration",
-                    DEFAULT_OPTION,
-                    WARNING_MESSAGE,
-                    null,
-                    options,
-                    options[0]);
-            if (answer == 0)
-                BareBonesBrowserLaunch.openURL(ECU_DEFS_URL);
-    	}
+	public void SelectNewBranch(String branch,String remote){
+		settings.setGitBranch(branch);
+		settings.setGitRemoteName(remote);
+		UpdateDefRepo();
+	}
+	
+	public void UpdateDefRepo() {
+		String remote = settings.getGitCurrentRemoteName();
+		String branch = settings.getGitBranch();
+		CheckoutRemoteBranch(remote, branch);
+	}
+	
+	public void UpdateDefinitions(){
+    	settings.UpdateEcuDefs();
+    	settings.UpdateLoggerDefs();
+    	settings.CheckCarDefs();
+    	settings.SetDefaultDefs();
 	}
 
 	/**
@@ -147,7 +126,7 @@ public final class DefinitionRepoManager extends AbstractFrame{
 	 */
 	public boolean InitAndCheckRepoExists(){
 		try {
-			gitRepo = initRepo(Settings.getGitDefsBaseDir());
+			gitRepo = initRepo(settings.getGitDefsBaseDir());
 			git = new Git(gitRepo);
 			return CheckLocalBranchExists(gitRepo, settings.getGitBranch());
 		} catch (IOException e) {
@@ -157,13 +136,9 @@ public final class DefinitionRepoManager extends AbstractFrame{
 	}
 	
 	public void DownloadRepo(){
-		showMessageDialog(this,
-            "Definition files are missing, downloading most up to date set from: " + Settings.defaultGitUrl + " This may take a few minutes!!",
-            "Definition Configuration",
-            INFORMATION_MESSAGE);
 		try {
 	    	setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));    	
-			GitClone(Settings.defaultGitUrl, Settings.defaultGitRemote, Settings.getGitDefsBaseDir(), settings.getGitBranch());
+			GitClone(settings.defaultGitUrl, settings.defaultGitRemote, settings.getGitDefsBaseDir(), settings.getGitBranch());
 			setCursor(null);
 			showMessageDialog(this,
 	                "Definition git repo successfully downloaded!",
@@ -175,19 +150,13 @@ public final class DefinitionRepoManager extends AbstractFrame{
 		}
 	}
 	
-	public void UpdateDefRepo() {
-		String remote = settings.getGitCurrentRemoteName();
-		String branch = settings.getGitBranch();
-		CheckoutRemoteBranch(remote, branch);
-	}
-	
 	private void CheckoutRemoteBranch(String remote, String branch) {
 		try {
 			git.fetch()
 				.setRemote(remote)
 				.setRemoveDeletedRefs(true)
 				.call();
-			UpdateAllBranches(SettingsManager.getSettings().getGitRemotes().get(remote), branch);
+			UpdateAllBranches(settings.getGitRemotes().get(remote), branch);
 		} catch (HeadlessException e){			
 			LOGGER.error("Error updating definition git repo: " + e.getMessage());
 		} catch (GitAPIException e) {
@@ -207,7 +176,7 @@ public final class DefinitionRepoManager extends AbstractFrame{
 					.setTimeout(10000)
 					.call();
 			FetchAll();
-			CheckoutBranch(checkoutBranch);
+			//CheckoutBranch(checkoutBranch);
 			
 		} catch (GitAPIException e) {
 			LOGGER.error("Error cloning git repo: " + e.getMessage());
@@ -250,7 +219,7 @@ public final class DefinitionRepoManager extends AbstractFrame{
 				LOGGER.error("Error updating definition git repo branches: " + e.getMessage());
 			}
 		}
-		CheckoutBranch(settings.getGitBranch());
+		CheckoutBranch(checkoutBranch);
 		LOGGER.info("Successfully updated definition git repo");
 	}
 	
@@ -264,7 +233,7 @@ public final class DefinitionRepoManager extends AbstractFrame{
         .setUpstreamMode(CreateBranchCommand.SetupUpstreamMode.TRACK)
         .setStartPoint(sbranch)
         .call();
-		settings.setGitBranch(sbranch);
+		//settings.setGitBranch(sbranch);
 	}
 
 	public void CheckoutBranch(String s) {
@@ -272,13 +241,24 @@ public final class DefinitionRepoManager extends AbstractFrame{
 		git = new Git(gitRepo);
 		try {
 			git.checkout().setName(s).setUpstreamMode(SetupUpstreamMode.TRACK).call();
-			settings.setGitBranch(s);
-			settings.CheckDefs();
+			ResetHardBranch(s);
 		} catch (GitAPIException e) {
 			LOGGER.error("Error checking out definition git repo branch " + s + ": " + e.getMessage());
 		}
+        UpdateDefinitions();
 	}
 	
+	public void ResetHardBranch(String s){
+		LOGGER.info("Resetting to git branch " + s);
+		git = new Git(gitRepo);
+		try {
+			git.reset().setMode(ResetType.HARD).setRef(s).call();
+			settings.setGitBranch(s);
+			settings.UpdateDefs();
+		} catch (GitAPIException e) {
+			LOGGER.error("Error resetting to git repo branch " + s + ": " + e.getMessage());
+		}
+	}
 	public static void gitClone(String url, String path, List<String> branches) throws IOException, InvalidRemoteException, TransportException, GitAPIException{
 		LOGGER.info("Cloning git repository at " + url + " to path " + path );
 		Git.cloneRepository()
@@ -410,7 +390,7 @@ public final class DefinitionRepoManager extends AbstractFrame{
 		config.setString("remote",name, "fetch", "+refs/heads/*:refs/remotes/" + name + "/*");
 		try {
 			config.save();
-			DefinitionRepoManager.initRepo(Settings.getGitDefsBaseDir());
+			DefinitionRepoManager.initRepo(settings.getGitDefsBaseDir());
 			git.init().call();
 			git.fetch().setRemote(name).call();
 			settings.addGitRemote(url, name);

@@ -250,7 +250,7 @@ public class DefinitionManager extends javax.swing.JFrame implements ActionListe
     }
 
     public void addFile() {
-        JFileChooser fc = new JFileChooser(Settings.RRECUDEFREPO);
+        JFileChooser fc = new JFileChooser(settings.RRECUDEFREPO);
         fc.setFileFilter(new XMLFilter());
 
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {

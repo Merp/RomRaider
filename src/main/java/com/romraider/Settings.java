@@ -19,10 +19,15 @@
 
 package com.romraider;
 
+import static com.romraider.Version.ECU_DEFS_URL;
 import static com.romraider.Version.RELEASE_NOTES;
 import static com.romraider.Version.ROM_REVISION_URL;
 import static com.romraider.Version.SUPPORT_URL;
 import static com.romraider.util.ParamChecker.checkNotNullOrEmpty;
+import static javax.swing.JOptionPane.DEFAULT_OPTION;
+import static javax.swing.JOptionPane.WARNING_MESSAGE;
+import static javax.swing.JOptionPane.showOptionDialog;
+import static org.apache.log4j.Logger.getLogger;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -36,6 +41,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Vector;
 
+import org.apache.log4j.Logger;
+
+import com.centerkey.utils.BareBonesBrowserLaunch;
+import com.romraider.definition.DefinitionRepoManager;
 import com.romraider.io.connection.ConnectionProperties;
 import com.romraider.logger.ecu.definition.EcuDefinition;
 import com.romraider.logger.external.phidget.interfacekit.io.IntfKitSensor;
@@ -43,7 +52,9 @@ import com.romraider.util.VectorUtils;
 
 public class Settings implements Serializable {
 
-    private static final long serialVersionUID = 1026542922680475190L;
+    private static final long serialVersionUID = 1026542922680475190L;    
+
+	private static final Logger LOGGER = getLogger(DefinitionRepoManager.class);
 
     /* String Format Settings */
     public static final String NEW_LINE = System.getProperty("line.separator");
@@ -195,21 +206,22 @@ public class Settings implements Serializable {
     private boolean colorAxis = false;
     
     /* JGIT Definition Settings */
-    public static final String HOME = System.getProperty("user.home");
-    public static final String defaultGitUrl = "https://github.com/RomRaider/SubaruDefs.git";
-    public static final String defaultGitRemote = "romraider";
-	public static final String gitDefsBaseDir = HOME + "/.RomRaider/SubaruDefs";
+	private boolean gitAutoUpdate;
+    public final String HOME = System.getProperty("user.home");
+    public final String defaultGitUrl = "https://github.com/RomRaider/SubaruDefs.git";
+    public final String defaultGitRemote = "romraider";
+	public final String gitDefsBaseDir = HOME + "/.RomRaider/SubaruDefs";
 
 	private String gitCurrentRemote;
 	private Map<String,String> gitRemotes = new HashMap<String,String>();
-	private String gitCurrentBranch = "/refs/remotes/romraider/Alpha";
+	private String gitCurrentBranch = "/refs/remotes/romraider/stable";
 	
-    public static final String RRECUDEFREPO = HOME + "/.RomRaider/SubaruDefs/RomRaider/ecu/";
-    public static final String RR_LOGGER_REPO = HOME + "/.RomRaider/SubaruDefs/RomRaider/logger/";
-    public static final String RR_CARS_REPO = HOME + "/.RomRaider/SubaruDefs/RomRaider/dyno/";
+    public final String RRECUDEFREPO = HOME + "/.RomRaider/SubaruDefs/RomRaider/ecu/";
+    public final String RR_LOGGER_REPO = HOME + "/.RomRaider/SubaruDefs/RomRaider/logger/";
+    public final String RR_CARS_REPO = HOME + "/.RomRaider/SubaruDefs/RomRaider/dyno/";
     
     public long definitionDirDate = 0;
-    public static File definitionDir = new File(HOME + "/.RomRaider");
+    public File definitionDir = new File(HOME + "/.RomRaider");
     private Vector<File> ecuDefinitionFiles = new Vector<File>();
     
     private static final String DEFAULT_STD_ECU_DEF = "standard\\ecu_defs.xml";
@@ -217,10 +229,6 @@ public class Settings implements Serializable {
     private static final String DEFAULT_LOGGER_DEF = "logger_STD_EN";
 
 	private String carsDefFilePath = RR_CARS_REPO + "cars_def.xml";
-	
-    private boolean ecuDefExists = true;
-    private boolean loggerDefExists = true;
-    private boolean carsDefExists = true;
 
     /* Logger settings */
     private String loggerPort;
@@ -898,31 +906,104 @@ public class Settings implements Serializable {
         this.phidgetSensors = phidgetSensors;
     }
 
-	public boolean CheckEcuDefs(){
+	public void CleanEcuDefs(){
+		ArrayList<File> removes = new ArrayList<File>();
+		for(File f : ecuDefinitionFiles)
+			if(!f.exists())
+				removes.add(f);
+		for(File f: removes)
+			ecuDefinitionFiles.remove(f);
+	}
+	
+	public void UpdateEcuDefs(){
+		CleanEcuDefs();
 		for(File f : VectorUtils.FilterCI(VectorUtils.Walk(RRECUDEFREPO),".xml"))
 			addEcuDefinitionFile(f);
-		if(ecuDefinitionFiles != null && !ecuDefinitionFiles.isEmpty())
+		if(ecuDefinitionFiles == null || ecuDefinitionFiles.isEmpty()){
+			LOGGER.info("Error loading ECU Defs from repository, configure manually.");
+            Object[] options = {"Yes", "No"};
+            int answer = showOptionDialog(null,
+                    "Unable to configure ECU definitions from repository.\n" +
+                    "ECU definition files need to be configured manually before ROM images can be opened.\n" +
+                    "Menu: Settings > Advanced Settings > Definitions...\n" +
+                    "Go online to download the latest definition files?",
+                    "Editor Configuration",
+                    DEFAULT_OPTION,
+                    WARNING_MESSAGE,
+                    null,
+                    options,
+                    options[0]);
+            if (answer == 0)
+                BareBonesBrowserLaunch.openURL(ECU_DEFS_URL);
+		}
+	}
+
+	public void CleanLoggerDefs(){
+		ArrayList<File> removes = new ArrayList<File>();
+		for(File f: availableLoggerDefFiles.values())
 		{
-			ArrayList<File> reml = new ArrayList<File>();
-			for(File s : ecuDefinitionFiles)
+			if(!f.exists())
+				removes.add(f);
+		}
+		for (File r : removes)
+			availableLoggerDefFiles.remove(r.getName());
+	}
+	
+	public void UpdateLoggerDefs(){
+		CleanLoggerDefs();
+		availableLoggerDefFiles.clear();
+		for(File f : VectorUtils.FilterCI(VectorUtils.Walk(RR_LOGGER_REPO),".xml"))
+			addAvailableLoggerDefFile(f,false);
+		if(!availableLoggerDefFiles.isEmpty())
+		{
+			if(getLoggerDefFilePath() == null || !new File(getLoggerDefFilePath()).exists())
 			{
-				if(!s.exists())
-				{
-					reml.add(s);//TODO ABSTRACT THIS
+				try{
+					setLoggerDefFilePath(availableLoggerDefFiles.values().iterator().next().getAbsolutePath());
+				} catch (Exception e){
+					throw new RuntimeException(e);
 				}
 			}
-			for(File r : reml)
-			{
-				ecuDefinitionFiles.remove(r);
-			}
-			
-			if(ecuDefinitionFiles.isEmpty())
-				ecuDefExists = false;
 		}
-		else
-			ecuDefExists = false;
-		return ecuDefExists;
+		else{
+			LOGGER.info("Error loading Logger defs from repository, configure manually.");
+            Object[] options = {"Yes", "No"};
+            int answer = showOptionDialog(null,
+                    "Unable to configure Logger definitions from repository.\n" +
+                    "Logger definition files need to be configured manually before logging.\n" +
+                    "Menu: Settings > Advanced Settings > Definitions...\n" +
+                    "Go online to download the latest definition files?",
+                    "Logger Configuration",
+                    DEFAULT_OPTION,
+                    WARNING_MESSAGE,
+                    null,
+                    options,
+                    options[0]);
+            if (answer == 0)
+                BareBonesBrowserLaunch.openURL(ECU_DEFS_URL);
+		}
 	}
+	
+	public void CheckCarDefs(){
+		if(!new File(carsDefFilePath).exists()){
+			LOGGER.info("Error loading logger dyno car defs from repository, configure manually.");
+            Object[] options = {"Yes", "No"};
+            int answer = showOptionDialog(null,
+                    "Unable to configure logger dyno car definitions from repository.\n" +
+                    "ECU definition files need to be configured manually before using logger dyno.\n" +
+                    "Menu: Settings > Advanced Settings > Definitions...\n" +
+                    "Go online to download the latest definition files?",
+                    "Logger Dyno Configuration",
+                    DEFAULT_OPTION,
+                    WARNING_MESSAGE,
+                    null,
+                    options,
+                    options[0]);
+            if (answer == 0)
+                BareBonesBrowserLaunch.openURL(ECU_DEFS_URL);
+		}
+	}
+	
 	
 	public void SetDefaultDefs(){
 		SetDefaultEcuDefs();
@@ -942,7 +1023,7 @@ public class Settings implements Serializable {
 		if(!availableLoggerDefFiles.isEmpty()){
 			if(getLoggerDefFilePath() == null || !new File(getLoggerDefFilePath()).exists()){
 				for(File f : availableLoggerDefFiles.values()){
-					if(f.getName().toUpperCase().contains(DEFAULT_LOGGER_DEF.toUpperCase())){
+					if(f.getName().toLowerCase().contains(DEFAULT_LOGGER_DEF.toLowerCase())){
 						setLoggerDefFilePath(f.getAbsolutePath());
 					}
 				}
@@ -950,33 +1031,6 @@ public class Settings implements Serializable {
 		}
 	}
 	
-	public boolean CheckLoggerDefs(){
-		for(File f : VectorUtils.FilterCI(VectorUtils.Walk(RR_LOGGER_REPO),".xml"))
-			addAvailableLoggerDefFile(f,false);
-		if(!availableLoggerDefFiles.isEmpty())
-		{
-			if(getLoggerDefFilePath() == null || !new File(getLoggerDefFilePath()).exists())
-			{
-				try{
-					setLoggerDefFilePath(availableLoggerDefFiles.values().iterator().next().getAbsolutePath());
-				} catch (Exception e){
-					loggerDefExists = false;
-					throw new RuntimeException(e);
-				}
-			}
-		}
-		else
-			loggerDefExists = false;
-		return loggerDefExists;
-	}
-	
-	public boolean CheckCarDefs(){
-		if(!new File(carsDefFilePath).exists())
-			carsDefExists = false;
-		else
-			carsDefExists = true;
-		return carsDefExists;
-	}
 	
 	public void removeEcuDefinitionFile(File s) {
 		ecuDefinitionFiles.remove(s);
@@ -984,18 +1038,6 @@ public class Settings implements Serializable {
 	
 	public void removeAvailableLoggerDef(File f) {
 		availableLoggerDefFiles.remove(f);
-	}
-
-	public boolean isEcuDefExists() {
-		return ecuDefExists;
-	}
-
-	public boolean isCarsDefExists() {
-		return carsDefExists;
-	}
-
-	public boolean isLoggerDefExists() {
-		return loggerDefExists;
 	}
 
 	public String getCarsDefFilePath() {
@@ -1042,23 +1084,22 @@ public class Settings implements Serializable {
 
 	public void setLoggerDefFilePath(String ldfp) {
 		if(ldfp != null && new File(ldfp).exists()){
-			this.loggerDefFilePath = ldfp;
-			loggerDefExists = true;
+			loggerDefFilePath = ldfp;
 		}
-		else if(getLoggerDefFilePath() == null || !new File(getLoggerDefFilePath()).exists()){
-			loggerDefExists = false;
-		}
-		else
-			loggerDefExists = true;
-		
+		//else
+			//TODO: throw exception
 	}
 
-	public static String getGitDefsBaseDir() {
+	public String getGitDefsBaseDir() {
 		return gitDefsBaseDir;
 	}
 
 	public String getGitCurrentRemoteName() {
 		return gitCurrentRemote;
+	}
+	
+	public void setGitRemoteName(String remote) {
+		gitCurrentRemote = remote;
 	}
 	
 	public String getGitCurrentRemoteUrl() {
@@ -1077,14 +1118,11 @@ public class Settings implements Serializable {
 		this.gitRemotes.put(name, url);
 	}
 
-	public boolean CheckDefs() {
-		if(!CheckEcuDefs()){
-			SetDefaultEcuDefs();
-		}
-		if(!CheckLoggerDefs()){
-			SetDefaultLoggerDefs();
-		}
-		return (CheckCarDefs() && CheckEcuDefs() && CheckLoggerDefs());
+	public void UpdateDefs() {
+		UpdateEcuDefs();
+		SetDefaultEcuDefs();
+		UpdateLoggerDefs();
+		SetDefaultLoggerDefs();
 	}
 
 	public Vector<String> getEcuDefinitionFileStrings() {
@@ -1093,6 +1131,14 @@ public class Settings implements Serializable {
             ret.add(ecuDefinitionFiles.get(i).getAbsolutePath());
         }
 		return ret;
+	}
+
+	public void setGitAutoUpdate(boolean b) {
+		gitAutoUpdate = b;		
+	}
+	
+	public boolean getGitAutoUpdate(){
+		return gitAutoUpdate;
 	}
 
 }

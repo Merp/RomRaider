@@ -192,11 +192,7 @@ public class ECUEditor extends AbstractFrame {
 		        	statusPanel.update("Updating Definition Repo...",75);
 		        	definitionRepoManager.UpdateDefRepo();
 		        }
-	        	showMessageDialog(this,
-	                    "Definition repository successfully configured! ECU definition file(s) must be selected before ROM images can be opened.\nMenu: ECU Definitions > ECU Definition Manager...",
-	                    "Editor Configuration",
-	                    INFORMATION_MESSAGE);
-	        	
+
 		        statusPanel.update("Ready...",0);
 		        setCursor(null);
 		       
