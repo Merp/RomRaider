@@ -4,9 +4,12 @@ import static org.apache.log4j.Logger.getLogger;
 
 import java.io.File;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
 
@@ -17,20 +20,32 @@ import com.romraider.util.VectorUtils;
 public class DefinitionManager {
 	
 	private DefinitionRepoManager definitionRepoManager;
-	private HashMap<Entry<Long,String>,Definition> definitionMap;
+	private HashMap<Entry<String,Long>,Definition> definitionAddressMap;
+	private HashMap<String,Definition> definitionMap;
+	
+	private TreeMap<String,TreeMap<String,Definition>> definitionTreeMap;
+	private Comparator<String> comparator;
 	
 	private HashMap<String, ScalingDef> scalingMap;
 	private HashMap<String, Definition> baseDefinitions;
+	
 	
 
 	private static final Logger LOGGER = getLogger(DefinitionRepoManager.class);
 	
 	public DefinitionManager(){
 		scalingMap = new HashMap<String,ScalingDef>();
-		definitionMap = new HashMap<Entry<Long,String>,Definition>();
+		definitionAddressMap = new HashMap<Entry<String,Long>,Definition>();
+		definitionMap = new HashMap<String,Definition>();
 		baseDefinitions = new HashMap<String,Definition>();
 		definitionRepoManager = new DefinitionRepoManager();
         definitionRepoManager.Load();
+        comparator = new Comparator<String>() {
+            public int compare(String o1, String o2) {
+                return o1.toLowerCase().compareTo(o2.toLowerCase());
+            }
+        };
+        definitionTreeMap = new TreeMap<String,TreeMap<String,Definition>>(comparator);
         
 	}
         
@@ -43,11 +58,19 @@ public class DefinitionManager {
         TestReadECUFlashBases();
         
         TestReadECUFlashDefinitions();
+        
+        TestShowECUFlashDefinitions();
+        
 		}catch(Exception e){
 			LOGGER.error(e.getMessage());
 			e.printStackTrace();
 		}
 		int i =0;
+	}
+	
+	private void TestShowECUFlashDefinitions(){
+		DefinitionEditor de = new DefinitionEditor();
+		de.setVisible(true);
 	}
 	
     private void WalkECUFlashDefinitionDirectory(){
@@ -64,9 +87,25 @@ public class DefinitionManager {
 			if(def.isBase())
 				baseDefinitions.put(def.getXmlId(),def);
 			//todo error handling
-			SimpleEntry<Long,String> dim = def.getInternalIDMap();//todo: base maps should return offset zero???? OR NOT INCLUDED IN definitionMAP
-			definitionMap.put(dim, def);
+			SimpleEntry<String,Long> dim = def.getInternalIDMap();//todo: base maps should return offset zero???? OR NOT INCLUDED IN definitionMAP
+			definitionAddressMap.put(dim, def);
+			definitionMap.put(def.getInternalID(),def);
+			if(!getDefinitionTreeMap().keySet().contains(def.getMetaData().getFullModel()))
+				getDefinitionTreeMap().put(def.getMetaData().getFullModel(),new TreeMap<String,Definition>(comparator));
+			TreeMap<String,Definition> th = definitionTreeMap.get(def.getMetaData().getFullModel());
+			th.put(def.getInternalID(), def);
 		}
+	}
+	
+	public List<Definition> getInheritingDefinitions(Definition parent){
+		List<Definition> ret = new ArrayList<Definition>();
+		for(Definition d: definitionMap.values()){
+			if(d.getInheritedDefinition()!= null){
+				if(d.getInheritedDefinition().getInternalID() == parent.getInternalID())
+					ret.add(d);
+			}
+		}
+		return ret;
 	}
 	
     public void TestReadECUFlashBases(){
@@ -89,7 +128,8 @@ public class DefinitionManager {
 	}
 
 	public Definition getDefinitionByXmlID(String includeXmlId) {
-		return this.definitionMap.get(includeXmlId);
+		Definition d = this.definitionMap.get(includeXmlId);
+		return d;
 	}
 
 	public ScalingDef getScaling(String attributeValue) {
@@ -107,4 +147,17 @@ public class DefinitionManager {
 		// TODO Auto-generated method stub
 		
 	}
+
+	public HashMap<Entry<String,Long>,Definition> getDefinitionAddressMap() {
+		return this.definitionAddressMap;
+	}
+
+	public HashMap<String,Definition> getDefinitionMap(){
+		return this.definitionMap;
+	}
+	
+	public TreeMap<String,TreeMap<String,Definition>> getDefinitionTreeMap() {
+		return definitionTreeMap;
+	}
+
 }

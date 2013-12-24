@@ -41,8 +41,11 @@ public class DefinitionMetaData {
 		}
 	}
 
-	protected SimpleEntry<Long, String> getInternalIDMap() {
-		return new SimpleEntry<>(this.getInternalIDAddress(), this.getInternalID());
+	protected SimpleEntry<String,Long> getInternalIDMap() {
+		if(isBase)
+			return new SimpleEntry<>(this.getXmlId(),this.getInternalIDAddress());
+		else
+			return new SimpleEntry<>(this.getInternalID(),this.getInternalIDAddress());
 	}
 
 	protected Long getInternalIDAddress() {
@@ -51,6 +54,8 @@ public class DefinitionMetaData {
 
 	protected String getInternalID() {
 		String id = romMetaData.get(Tags.INTERNAL_ID_STRING);
+		if(isBase)
+			id = getXmlId();
 		if(id!=null)
 			return id;
 		else
@@ -62,10 +67,28 @@ public class DefinitionMetaData {
 	}
 	
 	public String getXmlId() {
-		return XmlId;
+		String id = romMetaData.get(Tags.XMLID);
+		if(id != null)
+			return id;
+		else
+			return "Unknown";
 	}
 
 	public boolean isBase() {
 		return isBase;
+	}
+
+	public String getFullModel() {
+		String model = romMetaData.get(Tags.MODEL);
+		String sub = romMetaData.get(Tags.SUB_MODEL);
+		if(model != null){
+			if(sub != null)
+				return model + " " + sub;
+			return model;
+		}
+		else if(isBase)
+			return "Base";
+		else
+			return "Unknown";
 	}
 }
