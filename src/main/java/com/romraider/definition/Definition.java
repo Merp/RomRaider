@@ -154,7 +154,7 @@ public class Definition {
 			return this.metaData;
 		}
 
-		public SimpleEntry<Long, String> getInternalIDMap() {
+		public SimpleEntry<String,Long> getInternalIDMap() {
 			return this.metaData.getInternalIDMap();
 		}
 		
@@ -196,6 +196,11 @@ public class Definition {
 		public String getFile() {
 			return this.file.getAbsolutePath();
 		}
+
+		public String getInternalID() {
+			return this.metaData.getInternalID();
+		}
+
 
 	/*
 		  public static void SearchDocument() {
