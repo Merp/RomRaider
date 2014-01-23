@@ -23,19 +23,15 @@ import com.romraider.maps.Table;
 import com.sun.xml.internal.fastinfoset.stax.StAXDocumentParser;
 
 public class Definition {
-	//TODO: special BaseDefinition class inherits Definition????
 	private Document document;
 	private Element root;
-	private SAXBuilder saxBuilder;
-	
-	private boolean isParsed;
-	
+	private SAXBuilder saxBuilder;	
 	private DefinitionMetaData metaData;
 	private File file;
-	
-	private String XmlId;
-	
 	private HashMap<String,TableDef> tables;
+
+	//TODO: special BaseDefinition class inherits Definition????
+	//TODO: Synthesize XML Node for export
 	
 	public Definition(){
 		tables = new HashMap<String,TableDef>();
@@ -75,8 +71,7 @@ public class Definition {
 			if(this.metaData == null)
 				ReadECUFlashMetaData();
 			for (Element node : root.getChildren(Tags.TABLE_SCALING)){
-					ScalingDef sd = new ScalingDef(node,this);
-					ECUExec.getDefinitionManager().addScaling(sd);
+					ECUExec.getDefinitionManager().addScaling(ScalingFactory.CreateScaling(node,this));
 			}
 			for (Element node : root.getChildren(Tags.TABLE)){		
 					TableFactory(node);
@@ -131,7 +126,7 @@ public class Definition {
 		private void CreateTable1D(Element node){
 			String scalingname = node.getAttributeValue(Tags.TABLE_SCALING);
 			DefinitionManager dm = ECUExec.getDefinitionManager();
-			ScalingDef sd = dm.getScaling(scalingname);
+			Scale sd = dm.getScaling(scalingname);
 			if(sd != null && !sd.isBlob())
 				this.tables.put(node.getAttributeValue(Tags.TABLE_NAME), new TableDef1D(node,this));
 			else
@@ -199,6 +194,10 @@ public class Definition {
 
 		public String getInternalID() {
 			return this.metaData.getInternalID();
+		}
+
+		public HashMap<String,TableDef> getTableDefs() {
+			return this.tables;
 		}
 
 

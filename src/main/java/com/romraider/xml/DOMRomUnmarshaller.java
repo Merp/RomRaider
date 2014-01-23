@@ -597,7 +597,7 @@ public final class DOMRomUnmarshaller {
                 scale.getExpression()));
         scale.setByteExpression(unmarshallAttribute(scaleNode, "to_byte",
                 scale.getByteExpression()));
-        scale.setFormat(unmarshallAttribute(scaleNode, "format", "#"));
+        scale.setDecimalFormat(unmarshallAttribute(scaleNode, "format", "#"));
         scale.setMax(unmarshallAttribute(scaleNode, "max", 0.0));
         scale.setMin(unmarshallAttribute(scaleNode, "min", 0.0));
 

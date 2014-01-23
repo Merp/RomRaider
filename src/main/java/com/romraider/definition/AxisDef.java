@@ -14,6 +14,9 @@ public class AxisDef {
 	private Integer elements;
 	private String defaultScaling;
 	private Long dataAddress;
+	private String loggerParameter;
+	
+	//TODO: Synthesize XML node for export
 	
 	public AxisDef(Element node, TableDef parent){
 		if(parent.isBase())
@@ -48,6 +51,13 @@ public class AxisDef {
 				
 			case Tags.TABLE_ELEMENTS:
 				elements = Integer.parseInt(att.getValue());
+				continue;
+			
+			case Tags.TABLE_LOGGER_PARAMETER:
+				loggerParameter = att.getValue();
+				continue;
+			
+			default:
 				continue;
 			}
 		}
@@ -102,7 +112,11 @@ public class AxisDef {
 			return elements;
 		return getBase().getElements();
 	}
-	
+
+	public String getLoggerParameter() {
+		return loggerParameter;
+	}
+
 	/*		<table name="Idle Speed Error" type="X Axis" elements="9" scaling="RPM"/>
 		<table name="Engine Speed Delta" type="Y Axis" elements="9" scaling="RPM"/>
 		*/

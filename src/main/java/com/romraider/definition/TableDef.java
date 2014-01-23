@@ -17,6 +17,7 @@ public class TableDef {
 	private String description;
 	private Long dataAddress;
 	//TODO: Add support for lookup tables
+	//TODO: Synthesize XML Node for export, also in child classes
 	
 	public TableDef(Element node, String typ, Definition parent){
 		this.parentDefinition = parent;

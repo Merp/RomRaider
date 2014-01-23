@@ -34,9 +34,13 @@ public class Scale implements Serializable {
     private String unit = "0x";
     private String expression = "x";
     private String byteExpression = "x";
+<<<<<<< HEAD
     private String format = "#.##";
+=======
+    private String decimalFormat;
     private String stringFormat;
     private String storageType;
+>>>>>>> Refactor RomID into DefinitionMetaData class. Refactor scalingdef into scalingfactory and scale classes. Add functionality for string.format (without breaking decimalformatter) to scale and datacell.
     private double coarseIncrement = 2;
     private double fineIncrement = 1;
     private double min = 0.0;
