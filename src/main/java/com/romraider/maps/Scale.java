@@ -22,6 +22,9 @@
 package com.romraider.maps;
 
 import java.io.Serializable;
+import java.text.DecimalFormat;
+
+import com.romraider.definition.Definition;
 
 public class Scale implements Serializable {
 
@@ -31,12 +34,20 @@ public class Scale implements Serializable {
     private String unit = "0x";
     private String expression = "x";
     private String byteExpression = "x";
-    private String format = "#";
+    private String decimalFormat;
+    private String stringFormat;
+    private String storageType;
     private double coarseIncrement = 2;
     private double fineIncrement = 1;
     private double min = 0.0;
     private double max = 0.0;
     private Table table;
+
+	private boolean isBlob;
+	private byte[] disabledBlob;
+	private byte[] enabledBlob;
+
+	private Definition parentDefinition;
 
     public Scale() {
     }
@@ -64,12 +75,30 @@ public class Scale implements Serializable {
         this.unit = unit;
     }
 
-    public String getFormat() {
-        return format;
+	public String format(double realValue) {
+
+		if(stringFormat != null){
+			return String.format(stringFormat, realValue);
+		}
+		else {
+			DecimalFormat formatter = new DecimalFormat(decimalFormat);
+			return formatter.format(realValue);
+		}
+	}
+	
+    private String getFormat() {
+    	if(stringFormat != null)
+        	return stringFormat;
+    	else
+    		return decimalFormat;
     }
 
-    public void setFormat(String format) {
-        this.format = format;
+	public void setStringFormat(String value) {
+		this.stringFormat = value;		
+	}
+	
+    public void setDecimalFormat(String format) {
+        this.decimalFormat = format;
     }
 
     public String getExpression() {
@@ -93,7 +122,7 @@ public class Scale implements Serializable {
             return false;
         } else if (expression == null) {
             return false;
-        } else if (format == null) {
+        } else if (stringFormat == null && decimalFormat == null) {
             return false;
         } else if (coarseIncrement < 1) {
             return false;
@@ -149,4 +178,45 @@ public class Scale implements Serializable {
     public void setTable(Table table) {
         this.table = table;
     }
+
+	public String getStorageType() {
+		return storageType;
+	}
+
+	public void setStorageType(String storageType) {
+		this.storageType = storageType;
+	}
+
+	public boolean isBlob() {
+		return isBlob;
+	}
+
+	public void setBlob(boolean isBlob) {
+		this.isBlob = isBlob;
+	}
+
+	public void setDisabledBlob(byte[] blob) {
+		this.disabledBlob = blob;
+	}
+	
+	public byte[] getDisabledBlob(){
+		return this.disabledBlob;
+	}
+	
+	public void setEnabledBlob(byte[] blob) {
+		this.enabledBlob = blob;
+	}
+	
+	public byte[] getEnabledBlob(){
+		return this.enabledBlob;
+	}
+
+	public void setParentDefinition(Definition parent) {
+		this.parentDefinition = parent;
+	}
+	
+	public Definition getParentDefinition(){
+		return this.parentDefinition;
+	}
+
 }

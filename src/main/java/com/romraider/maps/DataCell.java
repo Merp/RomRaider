@@ -262,13 +262,12 @@ public class DataCell extends JLabel implements MouseListener, Serializable {
             return getStaticText();
         }
 
-        DecimalFormat formatter = new DecimalFormat(table.getCurrentScale().getFormat());
         String displayString = "";
 
         if (null == table.getCompareTable()) {
-            displayString = formatter.format(getRealValue());
+            displayString = table.getCurrentScale().format(getRealValue());
         } else if (table.getCompareDisplay() == Settings.COMPARE_DISPLAY_ABSOLUTE) {
-            displayString = formatter.format(getRealCompareValue());
+            displayString = table.getCurrentScale().format(getRealCompareValue());
         } else if (table.getCompareDisplay() == Settings.COMPARE_DISPLAY_PERCENT) {
             if (getCompareValue() == 0.0) {
                 displayString = PERCENT_FORMAT.format(0.0);
@@ -506,10 +505,9 @@ public class DataCell extends JLabel implements MouseListener, Serializable {
     public String getStaticText() {
         String displayString = null;
         try {
-            DecimalFormat formatter = new DecimalFormat(table.getCurrentScale().getFormat());
 
             double staticDouble = Double.parseDouble(staticText);
-            displayString = formatter.format(JEPUtil.evaluate(table.getCurrentScale().getExpression(), staticDouble));
+            displayString = table.getCurrentScale().format(JEPUtil.evaluate(table.getCurrentScale().getExpression(), staticDouble));//formatter.format(JEPUtil.evaluate(table.getCurrentScale().getExpression(), staticDouble));
         } catch (Exception ex) {
             displayString = this.staticText;
         }

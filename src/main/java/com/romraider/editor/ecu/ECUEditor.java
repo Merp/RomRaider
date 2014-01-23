@@ -51,6 +51,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Map.Entry;
 import java.util.Vector;
 
 import javax.swing.ImageIcon;
@@ -71,9 +72,13 @@ import org.xml.sax.SAXParseException;
 import com.centerkey.utils.BareBonesBrowserLaunch;
 import com.romraider.ECUExec;
 import com.romraider.Settings;
+import com.romraider.definition.Definition;
+import com.romraider.definition.DefinitionManager;
 import com.romraider.definition.DefinitionRepoManager;
 import com.romraider.logger.ecu.EcuLogger;
 import com.romraider.maps.Rom;
+import com.romraider.maps.RomFactory;
+import com.romraider.maps.RomID;
 import com.romraider.net.URL;
 import com.romraider.swing.AbstractFrame;
 import com.romraider.swing.CustomToolbarLayout;
@@ -665,6 +670,87 @@ class CloseImageWorker extends SwingWorker<Void, Void> {
     }
 }
 
+class OpenEcuFlashImageWorker extends SwingWorker<Void ,Void>{
+	private final File inputFile;
+	final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
+	
+	public OpenEcuFlashImageWorker(File inputFile){
+		this.inputFile = inputFile;
+	}
+	
+	@Override
+	protected Void doInBackground() throws Exception {
+		
+	
+		//TODO: Open an image using ecuflash definitions
+		
+		ECUEditor editor = ECUEditorManager.getECUEditor();
+		Settings settings = SettingsManager.getSettings();
+		DefinitionManager definitionManager = ECUExec.getDefinitionManager(); //TOOD: Manager class instead of ECUExec???
+		Definition definition = null;
+		
+		try{
+			
+			byte[] input = editor.readFile(inputFile);
+	
+	        editor.getStatusPanel().setStatus("Finding ECU definition...");
+	        setProgress(10);
+	        
+			Long lastAddress = (long) 0;
+			String idString = null;
+			
+			for(Entry<Entry<String,Long>,Definition> entry : definitionManager.getDefinitionAddressMap().entrySet()){
+				Long address = entry.getKey().getValue();
+				if(lastAddress != address){
+					lastAddress = address;
+					//get new ident
+					char[] hexChars = new char[idString.length() / 2];
+			        for (int i = 0; i < hexChars.length; i++) {
+			            for ( int j = 0; j < hexChars.length; j++ ) {
+			                int v = input[(int) (address + j)] & 0xFF;
+			                hexChars[j * 2] = hexArray[v >>> 4];
+			                hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+			            }
+			            idString = new String(hexChars);
+			        }
+				}
+				if(idString == entry.getKey().getKey()){
+			        definition = entry.getValue();
+					break;
+				}
+			}
+			
+			if(definition == null)
+				throw new Exception("Error, no definition found!");
+			
+			//populate definition stub
+			definition.ReadECUFlashDefinition();
+		
+			//TODO: Populate tabes
+			Rom rom = RomFactory.CreateFromDefinition(definition);
+            
+            rom.getRomID().setRamOffset( //TODO: refactor getRomId
+                    rom.getRomID().getFileSize()
+                    - input.length);
+			
+		} catch (StackOverflowError ex) {
+	        // handles looped inheritance, which will use up all available memory
+	        showMessageDialog(editor, "Looped \"base\" attribute in XML definitions.", "Error Loading " + inputFile.getName(), ERROR_MESSAGE);
+	
+	    } catch (OutOfMemoryError ome) {
+	        // handles Java heap space issues when loading multiple Roms.
+	        showMessageDialog(editor, "Error loading Image. Out of memeory.", "Error Loading " + inputFile.getName(), ERROR_MESSAGE);
+	
+	    } catch (Exception spe) {
+	        // catch general parsing exception - enough people don't unzip the defs that a better error message is in order
+	        //showMessageDialog(editor, "Unable to read XML definitions.  Please make sure the definition file is correct.  If it is in a ZIP archive, unzip the file and try again.", "Error Loading " + inputFile.getName(), ERROR_MESSAGE);
+	    	showMessageDialog(editor, spe.getMessage(), "Error Loading " + inputFile.getName(), ERROR_MESSAGE);
+	    }
+		return null;
+	}
+}
+
+
 class OpenImageWorker extends SwingWorker<Void, Void> {
     private final File inputFile;
 
@@ -699,7 +785,7 @@ class OpenImageWorker extends SwingWorker<Void, Void> {
                 doc = parser.getDocument();
 
                 Rom rom;
-
+                                
                 try {
                     rom = new DOMRomUnmarshaller().unmarshallXMLDefinition(doc.getDocumentElement(), input, editor.getStatusPanel());
                 } catch (RomNotFoundException rex) {

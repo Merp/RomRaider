@@ -26,7 +26,7 @@ public class DefinitionManager {
 	private TreeMap<String,TreeMap<String,Definition>> definitionTreeMap;
 	private Comparator<String> comparator;
 	
-	private HashMap<String, ScalingDef> scalingMap;
+	private HashMap<String, Scale> scalingMap;
 	private HashMap<String, Definition> baseDefinitions;
 	
 	
@@ -34,7 +34,7 @@ public class DefinitionManager {
 	private static final Logger LOGGER = getLogger(DefinitionRepoManager.class);
 	
 	public DefinitionManager(){
-		scalingMap = new HashMap<String,ScalingDef>();
+		scalingMap = new HashMap<String,Scale>();
 		definitionAddressMap = new HashMap<Entry<String,Long>,Definition>();
 		definitionMap = new HashMap<String,Definition>();
 		baseDefinitions = new HashMap<String,Definition>();
@@ -132,14 +132,14 @@ public class DefinitionManager {
 		return d;
 	}
 
-	public ScalingDef getScaling(String attributeValue) {
+	public Scale getScaling(String attributeValue) {
 		return scalingMap.get(attributeValue);
 	}
 
-	public void addScaling(ScalingDef sd) {
-		if(!scalingMap.containsKey(sd.getName()))
-			scalingMap.put(sd.getName(), sd);
-		//else
+	public void addScaling(Scale sc) {
+		if(!scalingMap.containsKey(sc.getName()))
+			scalingMap.put(sc.getName(), sc);
+		//TODO:else
 			//handle error!		
 	}
 

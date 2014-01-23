@@ -42,6 +42,8 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import org.apache.log4j.Logger;
 
 import com.romraider.Settings;
+import com.romraider.definition.Definition;
+import com.romraider.definition.DefinitionMetaData;
 import com.romraider.logger.ecu.ui.handler.table.TableUpdateHandler;
 import com.romraider.swing.CategoryTreeNode;
 import com.romraider.swing.JProgressPane;
@@ -54,15 +56,22 @@ import com.romraider.xml.TableNotFoundException;
 public class Rom extends DefaultMutableTreeNode implements Serializable  {
     private static final long serialVersionUID = 7865405179738828128L;
     private static final Logger LOGGER = Logger.getLogger(Rom.class);
-    private RomID romID = new RomID();
+    private Definition definition;
+    private DefinitionMetaData romID;
     private String fileName = "";
     private File fullFileName = new File(".");
     private final Vector<TableTreeNode> tableNodes = new Vector<TableTreeNode>();
     private byte[] binData;
     private boolean isAbstract = false;
 
-    public Rom() {
+    public Rom(){
         tableNodes.clear();
+    	//TODO: Deprecated, remove and clean
+    }
+    
+    public Rom(Definition d) {
+    	definition = d;
+    	romID = d.getMetaData();
     }
 
     public void refreshDisplayedTables() {
@@ -246,11 +255,7 @@ public class Rom extends DefaultMutableTreeNode implements Serializable  {
         }
     }
 
-    public void setRomID(RomID romID) {
-        this.romID = romID;
-    }
-
-    public RomID getRomID() {
+    public DefinitionMetaData getRomID() {
         return romID;
     }
 
@@ -400,4 +405,5 @@ public class Rom extends DefaultMutableTreeNode implements Serializable  {
     public DefaultMutableTreeNode getLastChild() {
         return (DefaultMutableTreeNode) super.getLastChild();
     }
+
 }

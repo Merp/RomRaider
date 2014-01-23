@@ -105,7 +105,7 @@ public class DefinitionEditor extends JFrame implements MouseListener {
 		springLayout.putConstraint(SpringLayout.NORTH, tabbedPane, 10, SpringLayout.NORTH, getContentPane());
 		springLayout.putConstraint(SpringLayout.WEST, tabbedPane, 10, SpringLayout.WEST, getContentPane());
 		springLayout.putConstraint(SpringLayout.SOUTH, tabbedPane, -10, SpringLayout.SOUTH, getContentPane());
-		springLayout.putConstraint(SpringLayout.EAST, tabbedPane, 243, SpringLayout.WEST, getContentPane());
+		springLayout.putConstraint(SpringLayout.EAST, tabbedPane, 452, SpringLayout.WEST, getContentPane());
 		getContentPane().add(tabbedPane);
 		
 		JScrollPane scrollPane = new JScrollPane();
