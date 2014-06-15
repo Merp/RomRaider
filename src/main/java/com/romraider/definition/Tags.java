@@ -16,9 +16,13 @@ public class Tags {
 	public static final String MEMORY_MODEL = "memmodel";
 	public static final String FLASHMETHOD = "flashmethod";
 	public static final String CHECKSUM_MODULES = "checksummodule";
-	
+	public static final String CASE_ID = "caseid";
+	public static final String FILESIZE = "filesize";
+	public static final String OBSOLETE = "obsolete";
+	public static final String ECU_ID = "ecuid";
 	public static final String INCLUDE = "include";
 	public static final String BASE = "base";
+	public static final String MAKE = "make";
 	
 	public static final String TABLE = "table";
 	public static final String TABLE_NAME = "name";
@@ -37,11 +41,14 @@ public class Tags {
 	public static final String TABLE_TYPE_BLOB = "BLOB";
 	
 
-	public static final String TABLE_AXIS = "axis";
+	public static final String TABLE_AXIS = "table";
 	public static final String AXIS_TYPE_X = "X Axis";
 	public static final String AXIS_TYPE_Y = "Y Axis";
+	public static final String AXIS_TYPE_STATIC_X = "Static X Axis";
+	public static final String AXIS_TYPE_STATIC_Y = "Static Y Axis";
 	public static final String INHHERIT_X_AXIS = "X";
 	public static final String INHERIT_Y_AXIS = "Y";
+	public static final String AXIS_DATA = "data";
 	
 	public static final String SCALING_NAME = "name";
 	public static final String UNITS = "units";
@@ -70,6 +77,9 @@ public class Tags {
 		"flashmethod",
 		"checksum"
 	};
+
+
+
 
 	
 

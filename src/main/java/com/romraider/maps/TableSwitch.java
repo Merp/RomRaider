@@ -45,6 +45,9 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextArea;
 
 import com.romraider.Settings;
+import com.romraider.definition.TableDef;
+import com.romraider.definition.TableDefBlob;
+import com.romraider.definition.TableType;
 
 public class TableSwitch extends Table {
 
@@ -53,10 +56,9 @@ public class TableSwitch extends Table {
     private final Map<String, byte[]> switchStates = new HashMap<String, byte[]>();
     private int dataSize = 0;
 
-    public TableSwitch() {
+    public TableSwitch(TableDef td) {
         super();
         storageType = 1;
-        type = Settings.TABLE_SWITCH;
         locked = true;
         removeAll();
         setLayout(new BorderLayout());
@@ -165,8 +167,8 @@ public class TableSwitch extends Table {
     }
 
     @Override
-    public int getType() {
-        return Settings.TABLE_SWITCH;
+    public TableType getTableType() {
+        return TableType.TABLE_BLOB;
     }
 
     @Override

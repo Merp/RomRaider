@@ -89,55 +89,55 @@ public class DefinitionMetaData {
 		for ( Element e : elements ){
 			romMetaData.put(e.getName().toLowerCase(),e.getValue());
 			
-			if (e.getName().equalsIgnoreCase("xmlid")) {
+			if (e.getName().equalsIgnoreCase(Tags.XMLID)) {
                 this.setXmlid(e.getValue());
 
             } else if (e.getName()
-                    .equalsIgnoreCase("internalidaddress")) {
+                    .equalsIgnoreCase(Tags.INTERNAL_ID_ADDRESS)) {
                 this.setInternalIdAddress(RomAttributeParser
                         .parseHexString(e.getValue()));
 
-            } else if (e.getName().equalsIgnoreCase("internalidstring")) {
+            } else if (e.getName().equalsIgnoreCase(Tags.INTERNAL_ID_STRING)) {
                 this.setInternalIdString(e.getValue());
                 if (this.getInternalIdString() == null) {
                     this.setInternalIdString("");
                 }
 
-            } else if (e.getName().equalsIgnoreCase("caseid")) {
+            } else if (e.getName().equalsIgnoreCase(Tags.CASE_ID)) {
                 this.setCaseId(e.getValue());
 
-            } else if (e.getName().equalsIgnoreCase("ecuid")) {
+            } else if (e.getName().equalsIgnoreCase(Tags.ECU_ID)) {
                 this.setEcuId(e.getValue());
 
-            } else if (e.getName().equalsIgnoreCase("make")) {
+            } else if (e.getName().equalsIgnoreCase(Tags.MAKE)) {
                 this.setMake(e.getValue());
 
-            } else if (e.getName().equalsIgnoreCase("market")) {
+            } else if (e.getName().equalsIgnoreCase(Tags.MARKET)) {
                 this.setMarket(e.getValue());
 
-            } else if (e.getName().equalsIgnoreCase("model")) {
+            } else if (e.getName().equalsIgnoreCase(Tags.MODEL)) {
                 this.setModel(e.getValue());
 
-            } else if (e.getName().equalsIgnoreCase("submodel")) {
+            } else if (e.getName().equalsIgnoreCase(Tags.SUB_MODEL)) {
                 this.setSubModel(e.getValue());
 
-            } else if (e.getName().equalsIgnoreCase("transmission")) {
+            } else if (e.getName().equalsIgnoreCase(Tags.TRANSMISSION)) {
                 this.setTransmission(e.getValue());
 
-            } else if (e.getName().equalsIgnoreCase("year")) {
+            } else if (e.getName().equalsIgnoreCase(Tags.YEAR)) {
                 this.setYear(e.getValue());
 
-            } else if (e.getName().equalsIgnoreCase("flashmethod")) {
+            } else if (e.getName().equalsIgnoreCase(Tags.FLASHMETHOD)) {
                 this.setFlashMethod(e.getValue());
 
-            } else if (e.getName().equalsIgnoreCase("memmodel")) {
+            } else if (e.getName().equalsIgnoreCase(Tags.MEMORY_MODEL)) {
                 this.setMemModel(e.getValue());
 
-            } else if (e.getName().equalsIgnoreCase("filesize")) {
+            } else if (e.getName().equalsIgnoreCase(Tags.FILESIZE)) {
                 this.setFileSize(RomAttributeParser
                         .parseFileSize(e.getValue()));
 
-            } else if (e.getName().equalsIgnoreCase("obsolete")) {
+            } else if (e.getName().equalsIgnoreCase(Tags.OBSOLETE)) {
                 this.setObsolete(Boolean.parseBoolean(e.getValue()));
 
             } else { /* unexpected element in this (skip) */

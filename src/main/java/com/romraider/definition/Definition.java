@@ -23,12 +23,14 @@ import com.romraider.maps.Table;
 import com.sun.xml.internal.fastinfoset.stax.StAXDocumentParser;
 
 public class Definition {
+	private DefinitionManager manager = ECUExec.getDefinitionManager();
 	private Document document;
 	private Element root;
 	private SAXBuilder saxBuilder;	
 	private DefinitionMetaData metaData;
 	private File file;
 	private HashMap<String,TableDef> tables;
+	private boolean populated = false;
 
 	//TODO: special BaseDefinition class inherits Definition????
 	//TODO: Synthesize XML Node for export
@@ -74,75 +76,72 @@ public class Definition {
 					ECUExec.getDefinitionManager().addScaling(ScalingFactory.CreateScaling(node,this));
 			}
 			for (Element node : root.getChildren(Tags.TABLE)){		
-					TableFactory(node);
+					TableDefFactory(node);
 			}
+			populated = true;
 		}
 		
-		private void TableFactory(Element node){
-			if(node.getAttributeValue(Tags.TABLE_TYPE) == null){
-				//first try inheritance
-				ECUExec.getDefinitionManager().getTableType(node.getAttributeValue(Tags.TABLE_NAME));
-				//then try implicit
-				if(node.getChildren(Tags.TABLE)!=null){
-					switch(node.getChildren(Tags.TABLE).size()){
-					case 2:
-						CreateTable3D(node);
-						break;
-					case 1:
-						CreateTable2D(node);
-						break;
-					default:
-						CreateTable1D(node);
-						break;
+		///Determine if the table is a base, and what type.
+		private void TableDefFactory(Element node){
+			try{
+				TableType type;
+				String name = node.getAttributeValue(Tags.TABLE_NAME);
+				if(name.equals(null))
+					throw new Exception("Error, table name missing in definition " + this.getFile());
+				
+				if(node.getAttributeValue(Tags.TABLE_TYPE).equals(null)){
+					if(isBase())
+						throw new Exception("Error, table type missing in table: " + name + ". In definition: "+ this.getFile());
+					else
+					{
+						TableDef base = this.getBase().getTableDefs().get(name);
+						
+						if(!base.equals(null))
+							throw new Exception("Error, base table not found for: " + name + ". In definition: "+ this.getFile());
+						else
+							type = base.getTableType();
 					}
 				}
 				else
-					CreateTable1D(node);
+					 type = DefinitionAttributeParser.ParseTableType(node.getAttributeValue(Tags.TABLE_TYPE));
+
+	
+				if(type.equals(TableType.TABLE_1D))//also handles blob tables
+					CreateTableDef1D(name, type, node);
+				else if(type.equals(TableType.TABLE_2D))
+					CreateTableDef2D(name, type, node);
+				else if(type.equals(TableType.TABLE_3D))
+					CreateTableDef3D(name, type, node);
+				else if(type.equals(TableType.TABLE_BLOB))
+					CreateTableDefBlob(name, type, node);
+				else
+					throw new Exception("Error, invalid table type in table: " + name + ". In definition: "+ this.getFile());
 				
-			}
-			else{
-				switch(node.getAttributeValue(Tags.TABLE_TYPE)){
-				case Tags.TABLE_TYPE_1D:
-					CreateTable1D(node);
-					break;
-					
-				case Tags.TABLE_TYPE_2D:
-					CreateTable2D(node);
-					break;
-					
-				case Tags.TABLE_TYPE_3D:
-					CreateTable3D(node);
-					break;
-					
-				case Tags.TABLE_TYPE_BLOB:
-					CreateTableBlob(node);
-					break;
-					
-				default:
-					break;
-				}
+			}catch(Exception e){
+				//TODO
 			}
 		}
-		private void CreateTable1D(Element node){
+		
+		private void CreateTableDef1D(String name, TableType type, Element node){
 			String scalingname = node.getAttributeValue(Tags.TABLE_SCALING);
 			DefinitionManager dm = ECUExec.getDefinitionManager();
 			Scale sd = dm.getScaling(scalingname);
 			if(sd != null && !sd.isBlob())
-				this.tables.put(node.getAttributeValue(Tags.TABLE_NAME), new TableDef1D(node,this));
+				this.tables.put(name, new TableDef1D(node, type, this));
 			else
-				this.tables.put(node.getAttributeValue(Tags.TABLE_NAME), new TableDefBlob(node,this));
+				this.tables.put(name, new TableDefBlob(node, type, this));
 		}
 		
-		private void CreateTable2D(Element node){
-			this.tables.put(node.getAttributeValue(Tags.TABLE_NAME), new TableDef2D(node,this));
+		private void CreateTableDef2D(String name, TableType type, Element node){
+			this.tables.put(name, new TableDef2D(node, type, this));
 		}
 		
-		private void CreateTable3D(Element node){
-			this.tables.put(node.getAttributeValue(Tags.TABLE_NAME), new TableDef3D(node,this));
+		private void CreateTableDef3D(String name, TableType type, Element node){
+			this.tables.put(name, new TableDef3D(node,type, this));
 		}
 		
-		private void CreateTableBlob(Element node){
-			this.tables.put(node.getAttributeValue(Tags.TABLE_NAME), new TableDefBlob(node,this));
+		private void CreateTableDefBlob(String name, TableType type, Element node){
+			this.tables.put(name, new TableDefBlob(node, type, this));
 		}
 		
 		public DefinitionMetaData getMetaData() {
@@ -159,12 +158,12 @@ public class Definition {
 			//TODO: error and base handling
 		}
 		
-		public List<String> getInheritanceList(){
-			List<String> childlist = new ArrayList<String>();
+		public List<Definition> getInheritanceList(){
+			List<Definition> childlist = new ArrayList<Definition>();
 			if(!metaData.isBase()){
 				childlist.addAll(getInheritedDefinition().getInheritanceList());
 			}
-			childlist.add(this.metaData.getXmlId());
+			childlist.add(this);
 			return childlist;
 		}
 		
@@ -198,6 +197,10 @@ public class Definition {
 
 		public HashMap<String,TableDef> getTableDefs() {
 			return this.tables;
+		}
+		
+		public Boolean isPopulated() {
+			return this.populated;
 		}
 
 

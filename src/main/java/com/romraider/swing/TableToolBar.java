@@ -64,6 +64,7 @@ import com.ecm.graphics.Graph3dFrameManager;
 import com.ecm.graphics.data.GraphData;
 import com.ecm.graphics.data.GraphDataListener;
 import com.romraider.Settings;
+import com.romraider.definition.TableType;
 import com.romraider.editor.ecu.ECUEditorManager;
 import com.romraider.maps.DataCell;
 import com.romraider.maps.Scale;
@@ -329,7 +330,7 @@ public class TableToolBar extends JToolBar implements MouseListener, ItemListene
         updateToolbarIncrementDecrementValues();
 
         this.overlayLog.setSelected(selectedTable.getOverlayLog());
-        this.enable3d.setEnabled(selectedTable.getType() == Settings.TABLE_3D);
+        this.enable3d.setEnabled(selectedTable.getTableType() == TableType.TABLE_3D);
 
         setScales(selectedTable.getScales());
 
@@ -406,7 +407,7 @@ public class TableToolBar extends JToolBar implements MouseListener, ItemListene
         refreshCompare.setEnabled(enabled);
 
         //Only enable the 3d button if table includes 3d data
-        if (null != currentTable && currentTable.getType() == Settings.TABLE_3D && enabled) {
+        if (null != currentTable && currentTable.getTableType() == TableType.TABLE_3D && enabled) {
             enable3d.setEnabled(true);
         }
         else{
@@ -577,7 +578,7 @@ public class TableToolBar extends JToolBar implements MouseListener, ItemListene
         Vector<float[]> graphValues = new Vector<float[]>();
         graphValues.clear();
 
-        if (currentTable.getType() == Settings.TABLE_3D) {
+        if (currentTable.getTableType() == TableType.TABLE_3D) {
             Table3D table3d = (Table3D) currentTable;
             DataCell[][] tableData = table3d.get3dData();
             valueCount = tableData.length;
@@ -758,7 +759,7 @@ public class TableToolBar extends JToolBar implements MouseListener, ItemListene
             return;
         }
 
-        if(curTable.getType() == Settings.TABLE_3D) {
+        if(curTable.getTableType() == TableType.TABLE_3D) {
             Table3D table3d = (Table3D) curTable;
             table3d.selectCellAt(x, table3d.getSizeY() - z - 1);
 
@@ -774,7 +775,7 @@ public class TableToolBar extends JToolBar implements MouseListener, ItemListene
             return;
         }
 
-        if(curTable.getType() == Settings.TABLE_3D) {
+        if(curTable.getTableType() == TableType.TABLE_3D) {
             if (value) {
                 Table3D table3d = (Table3D) curTable;
                 table3d.selectCellAtWithoutClear(x, table3d.getSizeY() - z - 1);

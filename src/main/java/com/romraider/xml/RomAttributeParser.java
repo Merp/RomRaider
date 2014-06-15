@@ -26,12 +26,15 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import com.romraider.Settings;
+import com.romraider.definition.TableType;
 
 public final class RomAttributeParser {
 
     private RomAttributeParser() {
     }
-
+    
+    //TODO: Merge this with stuff in definition class
+/*
     public static int parseEndian(String input) {
         if (input.equalsIgnoreCase("big") || input.equalsIgnoreCase(String.valueOf(Settings.ENDIAN_BIG))) {
             return Settings.ENDIAN_BIG;
@@ -42,7 +45,7 @@ public final class RomAttributeParser {
         else {
             return Settings.ENDIAN_LITTLE;
         }
-    }
+    }*/
 
     public static int parseHexString(String input) {
         if (input.equals("0")) {
@@ -55,7 +58,7 @@ public final class RomAttributeParser {
             return Integer.parseInt(input, 16);
         }
     }
-
+/*
     public static int parseStorageType(String input) {
         if (input.equalsIgnoreCase("float")) {
             return Settings.STORAGE_TYPE_FLOAT;
@@ -69,7 +72,7 @@ public final class RomAttributeParser {
         else {
             return Integer.parseInt(input);
         }
-    }
+    }*/
 
     public static boolean parseStorageDataSign(String input) {
         if (input.startsWith("int")) {
@@ -89,21 +92,21 @@ public final class RomAttributeParser {
         }
     }
 
-    public static int parseTableType(String input) {
+    public static TableType parseTableType(String input) {
         if (input.equalsIgnoreCase("3D") || input.equalsIgnoreCase(String.valueOf(Settings.TABLE_3D))) {
-            return Settings.TABLE_3D;
+            return TableType.TABLE_3D;
         }
         else if (input.equalsIgnoreCase("2D") || input.equalsIgnoreCase(String.valueOf(Settings.TABLE_2D))) {
-            return Settings.TABLE_2D;
+            return TableType.TABLE_2D;
         }
         else if (input.equalsIgnoreCase("X Axis") || input.equalsIgnoreCase("Static X Axis") || input.equalsIgnoreCase(String.valueOf(Settings.TABLE_X_AXIS))) {
-            return Settings.TABLE_X_AXIS;
+            return TableType.TABLE_X_AXIS;
         }
         else if (input.equalsIgnoreCase("Y Axis") || input.equalsIgnoreCase("Static Y Axis") || input.equalsIgnoreCase(String.valueOf(Settings.TABLE_Y_AXIS))) {
-            return Settings.TABLE_Y_AXIS;
+            return TableType.TABLE_Y_AXIS;
         }
         else {
-            return Settings.TABLE_1D;
+            return TableType.TABLE_1D;
         }
     }
 

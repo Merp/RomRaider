@@ -43,6 +43,9 @@ import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
 import com.romraider.Settings;
+import com.romraider.definition.TableDef;
+import com.romraider.definition.TableDef3D;
+import com.romraider.definition.TableType;
 import com.romraider.editor.ecu.ECUEditorManager;
 import com.romraider.logger.ecu.ui.swing.vertical.VerticalLabelUI;
 import com.romraider.util.SettingsManager;
@@ -51,8 +54,8 @@ import com.romraider.xml.RomAttributeParser;
 public class Table3D extends Table {
 
     private static final long serialVersionUID = 3103448753263606599L;
-    private Table1D xAxis = new Table1D();
-    private Table1D yAxis = new Table1D();
+    private Table1D xAxis;
+    private Table1D yAxis;
     private JLabel xAxisLabel;
     private JLabel yAxisLabel;
 
@@ -65,17 +68,21 @@ public class Table3D extends Table {
     CopyTable3DWorker copyTable3DWorker;
     CopySelection3DWorker copySelection3DWorker;
 
-    public Table3D() {
+    public Table3D(TableDef td) {
         super();
+        tableDef = td;
         verticalOverhead += 39;
         horizontalOverhead += 10;
+        TableDef3D td3d = (TableDef3D) td;
+        setXAxis(new Table1D(td3d.getXAxisDef(),this));
+        setYAxis(new Table1D(td3d.getYAxisDef(),this));
     }
 
     public Table1D getXAxis() {
         return xAxis;
     }
 
-    public void setXAxis(Table1D xAxis) {
+    private void setXAxis(Table1D xAxis) {
         this.xAxis = xAxis;
         xAxis.setAxisParent(this);
     }
@@ -84,7 +91,7 @@ public class Table3D extends Table {
         return yAxis;
     }
 
-    public void setYAxis(Table1D yAxis) {
+    private void setYAxis(Table1D yAxis) {
         this.yAxis = yAxis;
         yAxis.setAxisParent(this);
     }
@@ -591,7 +598,7 @@ public class Table3D extends Table {
     }
 
     public void selectCellAt(int y, Table1D axisType) {
-        if (axisType.getType() == Settings.TABLE_Y_AXIS) {
+        if (axisType.getTableType() == TableType.TABLE_Y_AXIS) {
             selectCellAt(0, y);
         } else { // y axis
             selectCellAt(y, 0);

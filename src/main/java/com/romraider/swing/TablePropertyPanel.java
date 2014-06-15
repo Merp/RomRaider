@@ -33,6 +33,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 
 import com.romraider.Settings;
+import com.romraider.definition.TableType;
 import com.romraider.maps.Scale;
 import com.romraider.maps.Table;
 import com.romraider.maps.TableSwitch;
@@ -48,7 +49,7 @@ public class TablePropertyPanel extends javax.swing.JPanel {
     category.setText(table.getCategory());
 
     int dim;
-    if (Settings.TABLE_SWITCH == table.getType()) {
+        if (table.getTableType() == TableType.TABLE_BLOB) {
         dim = 1;
         storageSize.setText("switch");
         scrollPane.setViewportView(populateScalesTable(
@@ -68,7 +69,7 @@ public class TablePropertyPanel extends javax.swing.JPanel {
             }
             storageSize.setText(dataType + (table.getStorageType() * 8));
         }
-        dim = table.getType();
+        dim = table.getTableType().value;
         scrollPane.setViewportView(populateScalesTable(table.getScales()));
     }
 

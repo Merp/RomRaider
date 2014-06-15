@@ -28,6 +28,7 @@ import javax.swing.JSeparator;
 
 import com.romraider.Settings;
 import com.romraider.maps.Table3D;
+import com.romraider.definition.TableType;
 
 public class TableMenuBar extends JMenuBar {
 
@@ -244,7 +245,7 @@ public class TableMenuBar extends JMenuBar {
 
     private void applyTableTypeRules(TableFrame frame) {
         // Hide items that don't work with a DTC tables.
-        if(frame.getTable().getType() == Settings.TABLE_SWITCH) {
+        if(frame.getTable().getTableType() == TableType.TABLE_BLOB) {
             editMenu.setEnabled(false);
             getCompareOriginal().setEnabled(false);
             getComparePercent().setEnabled(false);

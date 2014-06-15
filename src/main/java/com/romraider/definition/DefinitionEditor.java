@@ -63,7 +63,6 @@ import ZoeloeSoft.projects.JFontChooser.JFontChooser;
 
 import com.romraider.ECUExec;
 import com.romraider.Settings;
-import com.romraider.definition.DefinitionRepoManager;
 import com.romraider.editor.ecu.ECUEditor;
 import com.romraider.editor.ecu.ECUEditorManager;
 import com.romraider.logger.ecu.EcuLogger;

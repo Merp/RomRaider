@@ -39,19 +39,24 @@ import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
 import com.romraider.Settings;
+import com.romraider.definition.TableDef;
+import com.romraider.definition.TableDef2D;
 import com.romraider.editor.ecu.ECUEditorManager;
 import com.romraider.util.SettingsManager;
 
 public class Table2D extends Table {
     private static final long serialVersionUID = -7684570967109324784L;
-    private Table1D axis = new Table1D();
+    private Table1D axis;
     private JLabel axisLabel;
 
     private CopyTable2DWorker copyTable2DWorker;
     private CopySelection2DWorker copySelection2DWorker;
 
-    public Table2D() {
+    public Table2D(TableDef td) {
         super();
+        tableDef = td;
+        TableDef2D td2d = (TableDef2D)td;
+        setAxis(new Table1D(td2d.getAxisDef(),this));
         verticalOverhead += 18;
     }
 
@@ -59,7 +64,7 @@ public class Table2D extends Table {
         return axis;
     }
 
-    public void setAxis(Table1D axis) {
+    private void setAxis(Table1D axis) {
         this.axis = axis;
         axis.setAxisParent(this);
     }

@@ -18,8 +18,7 @@ import com.romraider.util.SettingsManager;
 import com.romraider.util.VectorUtils;
 
 public class DefinitionManager {
-	
-	private DefinitionRepoManager definitionRepoManager;
+
 	private HashMap<Entry<String,Long>,Definition> definitionAddressMap;
 	private HashMap<String,Definition> definitionMap;
 	
@@ -31,15 +30,13 @@ public class DefinitionManager {
 	
 	
 
-	private static final Logger LOGGER = getLogger(DefinitionRepoManager.class);
+	private static final Logger LOGGER = getLogger(DefinitionManager.class);
 	
 	public DefinitionManager(){
 		scalingMap = new HashMap<String,Scale>();
 		definitionAddressMap = new HashMap<Entry<String,Long>,Definition>();
 		definitionMap = new HashMap<String,Definition>();
 		baseDefinitions = new HashMap<String,Definition>();
-		definitionRepoManager = new DefinitionRepoManager();
-        definitionRepoManager.Load();
         comparator = new Comparator<String>() {
             public int compare(String o1, String o2) {
                 return o1.toLowerCase().compareTo(o2.toLowerCase());
@@ -123,9 +120,6 @@ public class DefinitionManager {
 			}
 		}
 	}
-	public DefinitionRepoManager getRepoManager() {
-		return definitionRepoManager;
-	}
 
 	public Definition getDefinitionByXmlID(String includeXmlId) {
 		Definition d = this.definitionMap.get(includeXmlId);
@@ -141,11 +135,6 @@ public class DefinitionManager {
 			scalingMap.put(sc.getName(), sc);
 		//TODO:else
 			//handle error!		
-	}
-
-	public void getTableType(String attributeValue) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	public HashMap<Entry<String,Long>,Definition> getDefinitionAddressMap() {

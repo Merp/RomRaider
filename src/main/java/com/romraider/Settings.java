@@ -195,7 +195,7 @@ public class Settings implements Serializable {
     private boolean colorAxis = false;
 
     /* ECUFLASH def settings */
-    public final String ECUFLASHDEFREPO = HOME + "/.RomRaider/SubaruDefs/ECUFlash/";
+    public final String ECUFLASHDEFREPO = System.getProperty("user.home") + "/.RomRaider/SubaruDefs/ECUFlash/";
 	private Vector<File> ecuFlashDefinitionFiles = new Vector<File>();
 
     private String loggerPort;
@@ -875,7 +875,6 @@ public class Settings implements Serializable {
 
         this.phidgetSensors = phidgetSensors;
     }
-	}
 
 	public void addEcuFlashDefinitionFile(File f) {
     		if(!ecuFlashDefinitionFiles.contains(f))
@@ -884,4 +883,5 @@ public class Settings implements Serializable {
 
 	public Vector<File> getEcuFlashDefinitionFiles() {
 		return ecuFlashDefinitionFiles;
+	}
 }

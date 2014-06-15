@@ -50,7 +50,10 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
+import com.romraider.ECUExec;
 import com.romraider.Settings;
+import com.romraider.definition.TableDef;
+import com.romraider.definition.TableType;
 import com.romraider.editor.ecu.ECUEditorManager;
 import com.romraider.swing.TableToolBar;
 import com.romraider.util.JEPUtil;
@@ -60,8 +63,8 @@ import com.romraider.xml.RomAttributeParser;
 public abstract class Table extends JPanel implements Serializable {
     private static final long serialVersionUID = 6559256489995552645L;
 
+    protected TableDef tableDef;
     protected String name;
-    protected int type;
     protected String category = "Other";
     protected String description = Settings.BLANK;
     protected Vector<Scale> scales = new Vector<Scale>();
@@ -118,7 +121,7 @@ public abstract class Table extends JPanel implements Serializable {
 
     public Table() {
         scales.clear();
-        scales.add(new Scale());
+		scales.add(tableDef.getDefaultScaling());
 
         this.setLayout(borderLayout);
         this.add(centerPanel, BorderLayout.CENTER);
@@ -468,7 +471,7 @@ public abstract class Table extends JPanel implements Serializable {
 
                 } else { // integer storage type
                     dataValue = RomAttributeParser.parseByteValue(input,
-                            endian,
+                            getEndian(),
                             getStorageAddress() + i * storageType - ramOffset,
                             storageType,
                             signed);
@@ -490,16 +493,12 @@ public abstract class Table extends JPanel implements Serializable {
         calcCellRanges();
     }
 
-    public int getType() {
-        return type;
-    }
-
+	public TableType getTableType() {
+		return tableDef.getTableType();
+	}
+	
     public DataCell getDataCell(int location) {
         return data[location];
-    }
-
-    public void setType(int type) {
-        this.type = type;
     }
 
     @Override
@@ -1152,7 +1151,7 @@ public abstract class Table extends JPanel implements Serializable {
     }
 
     public void validateScaling() {
-        if (type != Settings.TABLE_SWITCH) {
+        if (getTableType() != TableType.TABLE_BLOB) {
 
             // make sure a scale is present
             if (scales.isEmpty()) {

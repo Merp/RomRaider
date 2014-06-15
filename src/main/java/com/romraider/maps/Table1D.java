@@ -19,21 +19,44 @@
 
 package com.romraider.maps;
 
+import static com.romraider.xml.DOMHelper.unmarshallText;
+
 import java.awt.BorderLayout;
 
 import javax.swing.JLabel;
 
 import com.romraider.Settings;
+import com.romraider.definition.AxisDef;
+import com.romraider.definition.TableDef;
+import com.romraider.definition.TableDef1D;
+import com.romraider.definition.TableType;
 
 public class Table1D extends Table {
     private static final long serialVersionUID = -8747180767803835631L;
     private Table axisParent = null;
 
-    public Table1D() {
+    private TableDef tableDef;
+    private boolean isAxis = false;
+    
+    public Table1D(TableDef td) {
         super();
+        tableDef = td;
     }
 
-    public void setAxisParent(Table axisParent) {
+	public Table1D(AxisDef axis, Table parent) {
+		super();
+		isAxis = true;
+		tableDef = axis;
+		setAxisParent(parent);
+		if(axis.isStatic()){
+			for(String data : axis.getStaticData()){
+				DataCell dataCell = new DataCell(this, data);
+				this.addStaticDataCell(dataCell);
+			}
+		}
+	}
+
+	protected void setAxisParent(Table axisParent) {
         this.axisParent = axisParent;
     }
 
@@ -63,7 +86,7 @@ public class Table1D extends Table {
             centerPanel.add(this.getDataCell(i));
         }
 
-        if(null == name || name.isEmpty()) {
+        if(null == getName() || getName().isEmpty()) {
             ;// Do not add label.
         } else if(null == getCurrentScale () || "0x" == getCurrentScale().getUnit()) {
             // static or no scale exists.
@@ -82,50 +105,50 @@ public class Table1D extends Table {
 
     @Override
     public void cursorUp() {
-        if (type == Settings.TABLE_Y_AXIS) {
+        if (getTableType() == TableType.TABLE_Y_AXIS) {
             if (highlightY > 0 && data[highlightY].isSelected()) {
                 selectCellAt(highlightY - 1);
             }
-        } else if (type == Settings.TABLE_X_AXIS) {
+        } else if (getTableType() == TableType.TABLE_X_AXIS) {
             // Y axis is on top.. nothing happens
-        } else if (type == Settings.TABLE_1D) {
+        } else if (tableDef.getTableType() == TableType.TABLE_1D) {
             // no where to move up to
         }
     }
 
     @Override
     public void cursorDown() {
-        if (type == Settings.TABLE_Y_AXIS) {
-            if (getAxisParent().getType() == Settings.TABLE_3D) {
+        if (getTableType() == TableType.TABLE_Y_AXIS) {
+            if (getAxisParent().getTableType() == TableType.TABLE_3D) {
                 if (highlightY < getDataSize() - 1 && data[highlightY].isSelected()) {
                     selectCellAt(highlightY + 1);
                 }
-            } else if (getAxisParent().getType() == Settings.TABLE_2D) {
+            } else if (getAxisParent().getTableType() == TableType.TABLE_2D) {
                 if (data[highlightY].isSelected()) {
                     getAxisParent().selectCellAt(highlightY);
                 }
             }
-        } else if (type == Settings.TABLE_X_AXIS && data[highlightY].isSelected()) {
+        } else if (getTableType() == TableType.TABLE_X_AXIS && data[highlightY].isSelected()) {
             ((Table3D) getAxisParent()).selectCellAt(highlightY, this);
-        } else if (type == Settings.TABLE_1D) {
+        } else if (getTableType() == TableType.TABLE_1D) {
             // no where to move down to
         }
     }
 
     @Override
     public void cursorLeft() {
-        if (type == Settings.TABLE_Y_AXIS) {
+        if (getTableType() == TableType.TABLE_Y_AXIS) {
             // X axis is on left.. nothing happens
-            if (getAxisParent().getType() == Settings.TABLE_2D) {
+            if (getAxisParent().getTableType() == TableType.TABLE_2D) {
                 if (data[highlightY].isSelected()) {
                     selectCellAt(highlightY - 1);
                 }
             }
-        } else if (type == Settings.TABLE_X_AXIS && data[highlightY].isSelected()) {
+        } else if (getTableType() == TableType.TABLE_X_AXIS && data[highlightY].isSelected()) {
             if (highlightY > 0) {
                 selectCellAt(highlightY - 1);
             }
-        } else if (type == Settings.TABLE_1D && data[highlightY].isSelected()) {
+        } else if (getTableType() == TableType.TABLE_1D && data[highlightY].isSelected()) {
             if (highlightY > 0) {
                 selectCellAt(highlightY - 1);
             }
@@ -134,17 +157,17 @@ public class Table1D extends Table {
 
     @Override
     public void cursorRight() {
-        if (type == Settings.TABLE_Y_AXIS && data[highlightY].isSelected()) {
-            if (getAxisParent().getType() == Settings.TABLE_3D) {
+        if (getTableType() == TableType.TABLE_Y_AXIS && data[highlightY].isSelected()) {
+            if (getAxisParent().getTableType() == TableType.TABLE_3D) {
                 ((Table3D) getAxisParent()).selectCellAt(highlightY, this);
-            } else if (getAxisParent().getType() == Settings.TABLE_2D) {
+            } else if (getAxisParent().getTableType() == TableType.TABLE_2D) {
                 selectCellAt(highlightY + 1);
             }
-        } else if (type == Settings.TABLE_X_AXIS && data[highlightY].isSelected()) {
+        } else if (getTableType() == TableType.TABLE_X_AXIS && data[highlightY].isSelected()) {
             if (highlightY < getDataSize() - 1) {
                 selectCellAt(highlightY + 1);
             }
-        } else if (type == Settings.TABLE_1D && data[highlightY].isSelected()) {
+        } else if (getTableType() == TableType.TABLE_1D && data[highlightY].isSelected()) {
             if (highlightY < getDataSize() - 1) {
                 selectCellAt(highlightY + 1);
             }
@@ -164,9 +187,9 @@ public class Table1D extends Table {
 
         if(axisParent instanceof Table3D) {
             Table3D table3D = (Table3D) axisParent;
-            if(getType() == Settings.TABLE_X_AXIS) {
+            if(getTableType() == TableType.TABLE_X_AXIS) {
                 table3D.getYAxis().clearSelectedData();
-            } else if (getType() == Settings.TABLE_Y_AXIS) {
+            } else if (getTableType() == TableType.TABLE_Y_AXIS) {
                 table3D.getXAxis().clearSelectedData();
             }
         } else if (axisParent instanceof Table2D) {
@@ -234,8 +257,8 @@ public class Table1D extends Table {
     }
 
     public boolean isAxis() {
-        return getType() == Settings.TABLE_X_AXIS ||
-                getType() == Settings.TABLE_Y_AXIS || isStaticDataTable();
+        return getTableType() == TableType.TABLE_X_AXIS ||
+                getTableType() == TableType.TABLE_Y_AXIS || isStaticDataTable();
     }
 
     @Override

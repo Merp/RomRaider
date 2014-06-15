@@ -70,6 +70,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXParseException;
 
 import com.romraider.net.BrowserControl;
+import com.romraider.ECUExec;
 import com.romraider.Settings;
 import com.romraider.definition.Definition;
 import com.romraider.definition.DefinitionManager;
@@ -89,7 +90,6 @@ import com.romraider.swing.RomTreeRootNode;
 import com.romraider.swing.TableFrame;
 import com.romraider.swing.TableToolBar;
 import com.romraider.util.SettingsManager;
-import com.romraider.xml.DOMRomUnmarshaller;
 import com.romraider.xml.RomNotFoundException;
 import com.sun.org.apache.xerces.internal.parsers.DOMParser;
 
@@ -108,7 +108,7 @@ public class ECUEditor extends AbstractFrame {
     private ECUEditorMenuBar menuBar;
     private TableToolBar tableToolBar;
     private final JPanel toolBarPanel = new JPanel();
-    private OpenImageWorker openImageWorker;
+    private OpenEcuFlashImageWorker openImageWorker;
     private CloseImageWorker closeImageWorker;
     private SetUserLevelWorker setUserLevelWorker;
     private LaunchLoggerWorker launchLoggerWorker;
@@ -479,7 +479,7 @@ public class ECUEditor extends AbstractFrame {
 
     public void openImage(File inputFile) throws Exception {
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        openImageWorker = new OpenImageWorker(inputFile);
+        openImageWorker = new OpenEcuFlashImageWorker(inputFile);
         openImageWorker.addPropertyChangeListener(getStatusPanel());
         openImageWorker.execute();
     }
@@ -715,9 +715,9 @@ class OpenEcuFlashImageWorker extends SwingWorker<Void ,Void>{
 	    }
 		return null;
 	}
-}
 
 
+/*
 class OpenImageWorker extends SwingWorker<Void, Void> {
     private final File inputFile;
 
@@ -805,7 +805,7 @@ class OpenImageWorker extends SwingWorker<Void, Void> {
 
         }
         return null;
-    }
+    }*/
 
     public void propertyChange(PropertyChangeEvent evnt)
     {

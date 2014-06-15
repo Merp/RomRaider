@@ -202,7 +202,7 @@ public class Rom extends DefaultMutableTreeNode implements Serializable  {
                     } catch (ArrayIndexOutOfBoundsException ex) {
 
                         LOGGER.error(table.getName() +
-                                " type " + table.getType() + " start " +
+                                " type " + table.getTableType() + " start " +
                                 table.getStorageAddress() + " " + binData.length + " filesize", ex);
 
                         // table storage address extends beyond end of file
@@ -212,7 +212,7 @@ public class Rom extends DefaultMutableTreeNode implements Serializable  {
                         i--;
                     } catch (IndexOutOfBoundsException iex) {
                         LOGGER.error(table.getName() +
-                                " type " + table.getType() + " start " +
+                                " type " + table.getTableType() + " start " +
                                 table.getStorageAddress() + " " + binData.length + " filesize", iex);
 
                         // table storage address extends beyond end of file

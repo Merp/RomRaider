@@ -80,16 +80,16 @@ public class Scale implements Serializable {
 			return String.format(stringFormat, realValue);
 		}
 		else {
-			DecimalFormat formatter = new DecimalFormat(decimalFormat);
+			DecimalFormat formatter = new DecimalFormat(format);
 			return formatter.format(realValue);
 		}
 	}
 	
-    private String getFormat() {
+    public String getFormat() {
     	if(stringFormat != null)
         	return stringFormat;
     	else
-    		return decimalFormat;
+    		return format;
     }
 
 	public void setStringFormat(String value) {
@@ -97,7 +97,7 @@ public class Scale implements Serializable {
 	}
 	
     public void setDecimalFormat(String format) {
-        this.decimalFormat = format;
+        this.format = format;
     }
 
     public String getExpression() {
@@ -121,7 +121,7 @@ public class Scale implements Serializable {
             return false;
         } else if (expression == null) {
             return false;
-        } else if (stringFormat == null && decimalFormat == null) {
+        } else if (stringFormat == null && format == null) {
             return false;
         } else if (coarseIncrement < 1) {
             return false;

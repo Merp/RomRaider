@@ -81,10 +81,13 @@ public class ECUExec {
 
         // check for dodgy threading - dev only
         //RepaintManager.setCurrentManager(new ThreadCheckingRepaintManager(true));
-
+        
         // set look and feel
         initLookAndFeel();
 
+        definitionManager = new DefinitionManager();
+        definitionManager.Initialize();
+        
         // check if already running
         if (isRunning()) {
             if (args.length == 0 || containsLoggerArg(args)) {
@@ -115,8 +118,6 @@ public class ECUExec {
         return false;
     }
 
-        definitionManager = new DefinitionManager();
-        definitionManager.Initialize();
     private static void openLogger(String[] args) {
         startLogger(EXIT_ON_CLOSE, args);
     }
@@ -156,6 +157,8 @@ public class ECUExec {
             LOGGER.error("Error occurred", e);
         }
     }
+    
 	public static DefinitionManager getDefinitionManager() {
         return definitionManager;
+	}
 }
